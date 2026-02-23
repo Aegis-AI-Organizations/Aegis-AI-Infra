@@ -1,0 +1,20 @@
+name: Aegis CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # 1. Linting
+  call-lint:
+    uses: ./.github/workflows/linting.yml
+
+  # 2. Build & Test
+  call-tests:
+    needs: call-lint
+    uses: ./.github/workflows/build-and-test.yml

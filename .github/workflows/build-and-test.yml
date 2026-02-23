@@ -1,0 +1,10 @@
+name: Module - Build & Test
+on: workflow_call
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip
+        run: echo "No specific build/test steps defined for this repository type."
