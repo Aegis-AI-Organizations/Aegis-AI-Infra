@@ -5,6 +5,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-api-gateway
   tag: "latest"
+  pullPolicy: Always
 
 service:
   type: ClusterIP
