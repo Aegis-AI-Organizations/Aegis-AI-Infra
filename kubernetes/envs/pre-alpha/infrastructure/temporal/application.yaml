@@ -15,6 +15,16 @@ spec:
       valuesObject:
         server:
           replicaCount: 1
+          config:
+            persistence:
+              default:
+                driver: "sql"
+                sql:
+                  driver: "postgres12"
+              visibility:
+                driver: "sql"
+                sql:
+                  driver: "postgres12"
         cassandra:
           enabled: false
         postgresql:
