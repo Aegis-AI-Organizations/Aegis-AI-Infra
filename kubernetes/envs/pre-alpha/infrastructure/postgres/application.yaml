@@ -12,8 +12,16 @@ spec:
     chart: postgresql
     targetRevision: 16.x.x
     helm:
-      valueFiles:
-        - ../../envs/pre-alpha/infrastructure/postgres/values.yaml
+      valuesObject:
+        global:
+          postgresql:
+            auth:
+              database: aegis_db
+              username: aegis_admin
+              password: "password123"
+        primary:
+          persistence:
+            enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system

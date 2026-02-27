@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+    repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Api
     targetRevision: HEAD
     path: kubernetes/charts/aegis-service
     helm:

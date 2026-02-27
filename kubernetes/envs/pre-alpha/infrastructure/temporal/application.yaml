@@ -12,8 +12,13 @@ spec:
     chart: temporal
     targetRevision: 0.x.x
     helm:
-      valueFiles:
-        - ../../envs/pre-alpha/infrastructure/temporal/values.yaml
+      valuesObject:
+        server:
+          replicaCount: 1
+        cassandra:
+          enabled: false
+        postgresql:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
