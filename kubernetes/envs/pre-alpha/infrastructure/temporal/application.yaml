@@ -21,14 +21,27 @@ spec:
                 driver: "sql"
                 sql:
                   driver: "postgres12"
+                  host: "aegis-postgres-pre-alpha-postgresql"
+                  port: 5432
+                  user: "aegis_admin"
+                  password: "password123"
+                  database: "temporal"
               visibility:
                 driver: "sql"
                 sql:
                   driver: "postgres12"
+                  host: "aegis-postgres-pre-alpha-postgresql"
+                  port: 5432
+                  user: "aegis_admin"
+                  password: "password123"
+                  database: "temporal_visibility"
         cassandra:
           enabled: false
         postgresql:
-          enabled: true
+          enabled: false
+        elasticsearch:
+          replicas: 1
+          minimumMasterNodes: 1
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
