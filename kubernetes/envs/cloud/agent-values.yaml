@@ -1,0 +1,21 @@
+nameOverride: "aegis-agent-prod"
+
+replicaCount: 3
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-agent
+  tag: "stable"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: api.aegis-ai.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific

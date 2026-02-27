@@ -1,0 +1,9 @@
+nameOverride: "aegis-brain"
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-brain
+  tag: "latest"
+env:
+  - name: DB_HOST
+    value: "aegis-postgres.aegis-system.svc.cluster.local"
+  - name: TEMPORAL_HOST
+    value: "temporal.aegis-system.svc.cluster.local"

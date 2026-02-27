@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-prototype
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+    targetRevision: HEAD
+    path: kubernetes/envs/local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aegis-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

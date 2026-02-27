@@ -1,1 +1,11 @@
-* @enzogaggiotti
+.github @enzogaggiotti
+.gitignore @enzogaggiotti
+pre-commit-config.yaml @enzogaggiotti
+
+LICENSE @enzogaggiotti
+README.md @enzogaggiotti
+docs @enzogaggiotti
+
+kubernetes @enzogaggiotti
+scripts @enzogaggiotti
+terraform @enzogaggiotti

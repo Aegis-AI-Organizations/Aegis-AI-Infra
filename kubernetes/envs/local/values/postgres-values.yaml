@@ -1,0 +1,9 @@
+global:
+  postgresql:
+    auth:
+      database: aegis_db
+      username: aegis_admin
+      password: "password123"
+primary:
+  persistence:
+    enabled: false

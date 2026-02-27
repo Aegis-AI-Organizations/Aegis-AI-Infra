@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.nameOverride | default .Release.Name }}
+  labels:
+    app: {{ .Values.nameOverride | default .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.nameOverride | default .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nameOverride | default .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Values.nameOverride | default .Release.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort | default .Values.service.port }}
+          {{- if .Values.env }}
+          env:
+{{ toYaml .Values.env | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          securityContext:
+{{ toYaml .Values.securityContext | indent 12 }}
+          {{- if .Values.probes.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: {{ .Values.probes.liveness.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.probes.readiness.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- end }}

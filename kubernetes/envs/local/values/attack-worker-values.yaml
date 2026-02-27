@@ -1,0 +1,7 @@
+nameOverride: "attack-worker"
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-worker-pentest
+  tag: "latest"
+env:
+  - name: TEMPORAL_HOST
+    value: "temporal.aegis-system.svc.cluster.local"
