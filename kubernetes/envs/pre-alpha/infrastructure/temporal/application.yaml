@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://charts.temporal.io
+    repoURL: https://temporalio.github.io/helm-charts
     chart: temporal
     targetRevision: 0.x.x
     helm:
