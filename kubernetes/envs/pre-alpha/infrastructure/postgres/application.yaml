@@ -16,6 +16,7 @@ spec:
         global:
           postgresql:
             auth:
+              postgresPassword: "password123"
               database: aegis_db
               username: aegis_admin
               password: "password123"

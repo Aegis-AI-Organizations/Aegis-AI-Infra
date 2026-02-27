@@ -23,7 +23,7 @@ spec:
                   driver: "postgres12"
                   host: "aegis-postgres-pre-alpha-postgresql"
                   port: 5432
-                  user: "aegis_admin"
+                  user: "postgres"
                   password: "password123"
                   database: "temporal"
               visibility:
@@ -32,7 +32,7 @@ spec:
                   driver: "postgres12"
                   host: "aegis-postgres-pre-alpha-postgresql"
                   port: 5432
-                  user: "aegis_admin"
+                  user: "postgres"
                   password: "password123"
                   database: "temporal_visibility"
         cassandra:
