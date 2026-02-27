@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-api-gateway-pre-alpha
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+    targetRevision: HEAD
+    path: kubernetes/charts/aegis-service
+    helm:
+      valueFiles:
+        - ../../envs/pre-alpha/api-gateway/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aegis-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

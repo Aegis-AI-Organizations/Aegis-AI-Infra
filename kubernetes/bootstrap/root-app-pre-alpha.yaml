@@ -1,18 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: aegis-prototype
+  name: aegis-prototype-pre-alpha
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
     targetRevision: HEAD
-    path: kubernetes/envs/local
+    path: kubernetes/envs/pre-alpha
   destination:
     server: https://kubernetes.default.svc
-    namespace: aegis-system
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

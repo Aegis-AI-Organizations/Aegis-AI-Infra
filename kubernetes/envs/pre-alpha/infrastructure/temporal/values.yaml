@@ -1,0 +1,8 @@
+server:
+  replicaCount: 1
+
+cassandra:
+  enabled: false
+
+postgresql:
+  enabled: true
