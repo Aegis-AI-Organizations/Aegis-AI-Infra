@@ -1,3 +1,3 @@
-# Gvisor Sandbox | Aegis-AI-Infra
+# gVisor Sandbox Runtime — Aegis AI Infra
 
-Document initialisé pour les tests de récupération Docusaurus par le plugin remote-content.
+This document describes the use of **gVisor** as the container runtime for isolated sandbox workloads in the Aegis AI infrastructure.

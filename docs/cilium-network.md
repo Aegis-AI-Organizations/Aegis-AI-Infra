@@ -1,3 +1,3 @@
-# Cilium Network | Aegis-AI-Infra
+# Cilium Network Policies — Aegis AI Infra
 
-Document initialisé pour les tests de récupération Docusaurus par le plugin remote-content.
+This document describes the network security model used in the Aegis AI infrastructure, enforced by **Cilium CNI**.
