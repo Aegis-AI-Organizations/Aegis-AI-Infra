@@ -21,6 +21,16 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
 
+env:
+  - name: DB_HOST
+    value: "aegis-postgres-pre-alpha-postgresql.aegis-system.svc.cluster.local:5432"
+  - name: TEMPORAL_HOST
+    value: "aegis-temporal-pre-alpha.aegis-system.svc.cluster.local:7233"
+
+envFrom:
+  - secretRef:
+      name: aegis-env
+
 resources:
   limits:
     cpu: 200m

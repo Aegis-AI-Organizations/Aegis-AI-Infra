@@ -16,10 +16,12 @@ spec:
         global:
           postgresql:
             auth:
-              postgresPassword: "password123"
-              database: aegis_db
-              username: aegis_admin
-              password: "password123"
+              existingSecret: "aegis-env"
+              secretKeys:
+                adminPasswordKey: "POSTGRES_PASSWORD"
+                userPasswordKey: "POSTGRES_PASSWORD"
+              database: "aegis_db"
+              username: "aegis_admin"
         primary:
           persistence:
             enabled: false

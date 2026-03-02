@@ -23,8 +23,9 @@ spec:
                   driver: "postgres12"
                   host: "aegis-postgres-pre-alpha-postgresql"
                   port: 5432
-                  user: "postgres"
-                  password: "password123"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
                   database: "temporal"
               visibility:
                 driver: "sql"
@@ -32,9 +33,14 @@ spec:
                   driver: "postgres12"
                   host: "aegis-postgres-pre-alpha-postgresql"
                   port: 5432
-                  user: "postgres"
-                  password: "password123"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
                   database: "temporal_visibility"
+        prometheus:
+          enabled: false
+        grafana:
+          enabled: false
         cassandra:
           enabled: false
         postgresql:

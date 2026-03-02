@@ -27,6 +27,7 @@ root-app-pre-alpha.yaml
                ├── api-gateway/application.yaml
                ├── brain/application.yaml
                ├── dashboard/application.yaml
+               ├── infrastructure/db-init/application.yaml
                ├── pentest-worker/application.yaml
                ├── infrastructure/postgres/application.yaml
                └── infrastructure/temporal/application.yaml
@@ -41,7 +42,8 @@ ArgoCD deploys resources in the order defined by the `argocd.argoproj.io/sync-wa
 | Wave | Services |
 |---|---|
 | `1` | `postgresql`, `temporal` (infrastructure layer) |
-| `2` | `api-gateway`, `brain`, `dashboard`, `pentest-worker` (application layer) |
+| `2` | `db-init` PostgreSQL schema job |
+| `3` | `api-gateway`, `brain`, `dashboard`, `pentest-worker` (application layer) |
 
 This guarantees that databases and the workflow engine are available **before** the microservices start.
 
@@ -108,6 +110,33 @@ To access it locally, add this entry to `/etc/hosts`:
 ```
 127.0.0.1   api.aegis.pre-alpha.local
 ```
+
+---
+
+## 🗄️ Database Init Job
+
+The `pre-alpha` environment includes a dedicated schema initialization `Job`:
+
+- ArgoCD app: `kubernetes/envs/pre-alpha/infrastructure/db-init/application.yaml`
+- Job + SQL: `kubernetes/envs/pre-alpha/infrastructure/db-init/manifests/`
+- SQL script: `init.sql` (idempotent, safe to re-run)
+
+To run/update the job manually:
+
+```bash
+kubectl apply -k kubernetes/envs/pre-alpha/infrastructure/db-init/manifests
+```
+
+To re-run it after a successful execution:
+
+```bash
+kubectl delete job -n aegis-system aegis-db-init-pre-alpha
+kubectl apply -k kubernetes/envs/pre-alpha/infrastructure/db-init/manifests
+```
+
+The job reads the PostgreSQL admin password from the Bitnami-generated secret
+`aegis-postgres-pre-alpha-postgresql` (`postgres-password` key), waits for PostgreSQL
+to be reachable, then executes the SQL schema with `psql`.
 
 ---
 
