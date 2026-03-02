@@ -18,6 +18,10 @@ env:
   - name: TEMPORAL_HOST
     value: "temporal.aegis-system.svc.cluster.local:7233"
 
+envFrom:
+  - secretRef:
+      name: aegis-env
+
 resources:
   limits:
     cpu: 300m

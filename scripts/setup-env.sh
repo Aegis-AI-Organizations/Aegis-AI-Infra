@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+# Load .env if present (dev local override)
+ENV_FILE="$(cd "$(dirname "$0")/.." && pwd)/.env"
+if [ -f "$ENV_FILE" ]; then
+  echo "📦 Loading environment variables from .env..."
+  set -o allexport
+  # shellcheck source=../.env
+  source "$ENV_FILE"
+  set +o allexport
+fi
+
 ENV=$1
 if [[ -z "$ENV" ]]; then
   echo "Usage: ./setup-env.sh <environment>"
@@ -12,6 +22,16 @@ echo "🎡 Initializing Aegis infrastructure for environment [$ENV]..."
 
 kubectl create namespace argocd || true
 kubectl create namespace aegis-system || true
+
+# Inject the local .env securely into the Kubernetes cluster
+if [ -f "$ENV_FILE" ]; then
+  echo "🔒 Pushing local .env into Kubernetes Secret 'aegis-env'..."
+  # Use dry-run to apply or overwrite the secret idempotently
+  kubectl create secret generic aegis-env \
+    --from-env-file="$ENV_FILE" \
+    --namespace aegis-system \
+    --dry-run=client -o yaml | kubectl apply -f -
+fi
 
 echo "📥 Installing Ingress Nginx..."
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
@@ -35,5 +55,13 @@ else
     kubectl apply -f ../kubernetes/bootstrap/root-app-$ENV.yaml
 fi
 
+# Authenticate to GHCR if token is set
+if [[ -n "$GHCR_TOKEN" && -n "$GHCR_USERNAME" ]]; then
+  echo "🔐 Authenticating to GHCR..."
+  echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+fi
+
 echo "🚀 Everything is ready! ArgoCD is now managing your '$ENV' environment."
 echo "You can view ArgoCD by port-forwarding: kubectl port-forward svc/argocd-server -n argocd 8080:443"
+echo ""
+echo "💡 Tip: run 'source .env' to load DB and service variables in your terminal."

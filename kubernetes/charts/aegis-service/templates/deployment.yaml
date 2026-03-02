@@ -24,6 +24,10 @@ spec:
           env:
 {{ toYaml .Values.env | indent 12 }}
           {{- end }}
+          {{- if .Values.envFrom }}
+          envFrom:
+{{ toYaml .Values.envFrom | indent 12 }}
+          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           securityContext:
