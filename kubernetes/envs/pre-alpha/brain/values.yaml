@@ -14,9 +14,9 @@ service:
 
 env:
   - name: DB_HOST
-    value: "aegis-postgres-pre-alpha.aegis-system.svc.cluster.local:5432"
+    value: "aegis-postgres-pre-alpha-postgresql.aegis-system.svc.cluster.local:5432"
   - name: TEMPORAL_HOST
-    value: "temporal.aegis-system.svc.cluster.local:7233"
+    value: "aegis-temporal-pre-alpha-frontend.aegis-system.svc.cluster.local:7233"
 
 envFrom:
   - secretRef:
