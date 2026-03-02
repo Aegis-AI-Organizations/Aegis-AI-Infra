@@ -60,6 +60,15 @@ if [[ -n "$GHCR_TOKEN" && -n "$GHCR_USERNAME" ]]; then
   echo "🔐 Authenticating to GHCR..."
   echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 fi
+# Auto-initialize Temporal Namespace in the background
+echo "🕒 Starting Temporal namespace auto-initialization job..."
+(
+  # Wait up to 3 minutes for Temporal AdminTools to be available and run the setup
+  kubectl wait --for=condition=available --timeout=180s deployment/aegis-temporal-pre-alpha-admintools -n aegis-system 2>/dev/null || true
+  sleep 5 # Extra buffer for the internal services to fully boot
+  echo "⚙️ Creating 'default' Temporal namespace..."
+  kubectl exec -n aegis-system deployment/aegis-temporal-pre-alpha-admintools -- temporal operator namespace create default 2>/dev/null || true
+) &
 
 echo "🚀 Everything is ready! ArgoCD is now managing your '$ENV' environment."
 echo "You can view ArgoCD by port-forwarding: kubectl port-forward svc/argocd-server -n argocd 8080:443"
