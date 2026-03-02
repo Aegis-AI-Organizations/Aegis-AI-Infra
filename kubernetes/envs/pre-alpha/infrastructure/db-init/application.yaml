@@ -1,19 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: aegis-pentest-worker-pre-alpha
+  name: aegis-db-init-pre-alpha
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:
     repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
     targetRevision: HEAD
-    path: kubernetes/charts/aegis-service
-    helm:
-      valueFiles:
-        - ../../envs/pre-alpha/pentest-worker/values.yaml
+    path: kubernetes/envs/pre-alpha/infrastructure/db-init/manifests
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system

@@ -37,6 +37,7 @@ GitHub (this repo)
        ├─── aegis-dashboard-<env>      → namespace: aegis-system
        ├─── aegis-pentest-worker-<env> → namespace: aegis-system
        ├─── aegis-postgres-<env>       → namespace: aegis-system
+       ├─── aegis-db-init-<env>        → namespace: aegis-system
        └─── aegis-temporal-<env>       → namespace: aegis-system
 ```
 
@@ -100,6 +101,7 @@ Aegis-AI-Infra/
 │           ├── dashboard/
 │           ├── pentest-worker/
 │           └── infrastructure/
+│               ├── db-init/          # PostgreSQL schema init job
 │               ├── postgres/         # PostgreSQL (Bitnami)
 │               └── temporal/         # Temporal Workflow Engine
 │
@@ -164,6 +166,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 | `brain` | `ghcr.io/.../aegis-ai-brain:latest` | 8080 | — |
 | `dashboard` | `ghcr.io/.../aegis-ai-dashboard:latest` | 8080 | — |
 | `pentest-worker` | `ghcr.io/.../aegis-ai-worker-pentest:latest` | 8080 | — |
+| `db-init` | `postgres:16` (Kubernetes Job) | — | — |
 | `postgresql` | Bitnami PostgreSQL 16 | 5432 | — |
 | `temporal` | Temporal Helm Chart | 7233 | — |
 

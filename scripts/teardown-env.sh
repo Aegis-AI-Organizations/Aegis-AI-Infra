@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Load .env if present
+ENV_FILE="$(cd "$(dirname "$0")/.." && pwd)/.env"
+if [ -f "$ENV_FILE" ]; then
+  set -o allexport; source "$ENV_FILE"; set +o allexport
+fi
+
 ENV=$1
 if [[ -z "$ENV" ]]; then
   echo "Usage: ./teardown-env.sh <environment>"

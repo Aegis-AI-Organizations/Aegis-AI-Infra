@@ -19,6 +19,42 @@ Make sure the following tools are installed before proceeding:
 
 ---
 
+## ⚙️ Environment Setup (`.env`)
+
+All sensitive variables (DB passwords, tokens, etc.) are managed locally via a `.env` file that is **never committed** (listed in `.gitignore`).
+
+```bash
+# Copy the template
+cp .env.example .env
+```
+
+Then open `.env` and fill in any missing values (e.g. your `GHCR_TOKEN`). The pre-alpha defaults are already pre-filled for local use.
+
+```bash
+# Load variables in your current terminal session
+source .env
+
+# Quick check — should print "aegis_admin"
+echo $POSTGRES_USER
+```
+
+> 💡 All scripts (`setup-env.sh`, `stop-env.sh`, `teardown-env.sh`) automatically source `.env` on startup — you don't need to source it manually before running them.
+
+| Variable | Description | Default |
+|---|---|---|
+| `POSTGRES_HOST` | PostgreSQL host (after port-forward) | `localhost` |
+| `POSTGRES_PORT` | PostgreSQL port | `5432` |
+| `POSTGRES_DB` | Database name | `aegis_db` |
+| `POSTGRES_USER` | DB username | `aegis_admin` |
+| `POSTGRES_PASSWORD` | DB password | `password123` |
+| `TEMPORAL_HOST` | Temporal host (after port-forward) | `localhost` |
+| `TEMPORAL_PORT` | Temporal gRPC port | `7233` |
+| `ARGOCD_SERVER` | ArgoCD server address | `localhost:8080` |
+| `GHCR_USERNAME` | GitHub username for GHCR auth | *(your GitHub handle)* |
+| `GHCR_TOKEN` | GitHub PAT (`read:packages` scope) | *(generate on GitHub)* |
+
+---
+
 ## 🖥️ Option A — Docker Desktop (recommended for macOS/Windows)
 
 1. Open **Docker Desktop**
