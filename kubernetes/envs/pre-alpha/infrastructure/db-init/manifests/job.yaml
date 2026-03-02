@@ -20,12 +20,12 @@ spec:
             - name: PGDATABASE
               value: aegis_db
             - name: PGUSER
-              value: postgres
+              value: aegis_admin
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: aegis-postgres-pre-alpha-postgresql
-                  key: postgres-password
+                  name: aegis-env
+                  key: POSTGRES_PASSWORD
           command:
             - /bin/bash
             - -ec
