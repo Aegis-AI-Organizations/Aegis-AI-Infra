@@ -20,6 +20,10 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
 
+envFrom:
+  - secretRef:
+      name: aegis-env
+
 resources:
   limits:
     cpu: 100m
