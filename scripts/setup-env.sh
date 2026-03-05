@@ -73,7 +73,7 @@ echo "🕒 Starting Temporal namespace auto-initialization job..."
   # Check if namespace already exists, otherwise create it
   if ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe -n default >/dev/null 2>&1; then
     echo "⚙️ Creating 'default' Temporal namespace..."
-    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n default --retention 1 --description "Default namespace for Aegis" || true
+    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n default --retention 24h --description "Default namespace for Aegis" || true
   fi
 ) &
 
