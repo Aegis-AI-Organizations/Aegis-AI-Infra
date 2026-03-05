@@ -14,6 +14,10 @@ spec:
       labels:
         app: {{ .Values.nameOverride | default .Release.Name }}
     spec:
+      {{- if .Values.initContainers }}
+      initContainers:
+{{ toYaml .Values.initContainers | indent 8 }}
+      {{- end }}
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ .Values.nameOverride | default .Release.Name }}
       {{- end }}

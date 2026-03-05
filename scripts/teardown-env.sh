@@ -16,12 +16,14 @@ fi
 
 echo "🗑️ Deleting ArgoCD Root Application [$ENV]..."
 if [ -f "kubernetes/bootstrap/root-app-$ENV.yaml" ]; then
-    kubectl delete -f kubernetes/bootstrap/root-app-$ENV.yaml || true
+    kubectl delete -f "kubernetes/bootstrap/root-app-$ENV.yaml" || true
 else
-    kubectl delete -f ../kubernetes/bootstrap/root-app-$ENV.yaml || true
+    kubectl delete -f "../kubernetes/bootstrap/root-app-$ENV.yaml" || true
 fi
 
-echo "🧹 Cleaning up Aegis namespaces (this will aggressively stop all your deployed pods)..."
+echo "🧹 Cleaning up Aegis namespaces, ArgoCD, and Ingress..."
 kubectl delete namespace aegis-system --ignore-not-found || true
+kubectl delete namespace argocd --ignore-not-found || true
+kubectl delete namespace ingress-nginx --ignore-not-found || true
 
 echo "✅ All Aegis pods and resources have been successfully stopped and removed."

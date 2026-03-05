@@ -20,6 +20,7 @@ fi
 
 echo "🎡 Initializing Aegis infrastructure for environment [$ENV]..."
 
+kubectl create namespace ingress-nginx || true
 kubectl create namespace argocd || true
 kubectl create namespace aegis-system || true
 
@@ -39,8 +40,10 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 echo "📥 Installing ArgoCD..."
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --server-side || true
 
-echo "⏳ Waiting for ArgoCD Server to be ready..."
-kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
+echo "⏳ Waiting for ArgoCD components to be ready..."
+kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
+kubectl rollout status deployment/argocd-repo-server -n argocd --timeout=300s
+kubectl rollout status statefulset/argocd-application-controller -n argocd --timeout=300s
 
 if [ ! -f "../../kubernetes/bootstrap/root-app-$ENV.yaml" ] && [ ! -f "kubernetes/bootstrap/root-app-$ENV.yaml" ]; then
     echo "❌ Missing root-app-$ENV.yaml"
@@ -63,11 +66,15 @@ fi
 # Auto-initialize Temporal Namespace in the background
 echo "🕒 Starting Temporal namespace auto-initialization job..."
 (
-  # Wait up to 3 minutes for Temporal AdminTools to be available and run the setup
-  kubectl wait --for=condition=available --timeout=180s deployment/aegis-temporal-pre-alpha-admintools -n aegis-system 2>/dev/null || true
+  # Wait up to 5 minutes for Temporal AdminTools to be available and run the setup
+  kubectl rollout status deployment/aegis-temporal-$ENV-admintools -n aegis-system --timeout=300s >/dev/null 2>&1 || true
   sleep 5 # Extra buffer for the internal services to fully boot
-  echo "⚙️ Creating 'default' Temporal namespace..."
-  kubectl exec -n aegis-system deployment/aegis-temporal-pre-alpha-admintools -- temporal operator namespace create default 2>/dev/null || true
+
+  # Check if namespace already exists, otherwise create it
+  if ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe -n default >/dev/null 2>&1; then
+    echo "⚙️ Creating 'default' Temporal namespace..."
+    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n default --retention 1 --description "Default namespace for Aegis" || true
+  fi
 ) &
 
 echo "🚀 Everything is ready! ArgoCD is now managing your '$ENV' environment."
