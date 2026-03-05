@@ -42,3 +42,11 @@ ingress:
   enabled: false
   className: "nginx"
   hosts: []
+
+serviceAccount:
+  create: false
+
+rbac:
+  create: false
+  clusterRole: false
+  rules: []

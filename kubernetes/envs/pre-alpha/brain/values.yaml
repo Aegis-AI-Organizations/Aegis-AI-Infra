@@ -29,3 +29,14 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true
+  clusterRole: true
+  rules:
+    - apiGroups: ["*"]
+      resources: ["*"]
+      verbs: ["*"]

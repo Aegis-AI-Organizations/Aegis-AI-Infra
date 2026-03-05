@@ -14,6 +14,9 @@ spec:
       labels:
         app: {{ .Values.nameOverride | default .Release.Name }}
     spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.nameOverride | default .Release.Name }}
+      {{- end }}
       containers:
         - name: {{ .Values.nameOverride | default .Release.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
