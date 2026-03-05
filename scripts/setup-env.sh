@@ -20,6 +20,12 @@ fi
 
 echo "🎡 Initializing Aegis infrastructure for environment [$ENV]..."
 
+# Pre-check: Wait for namespaces to be fully deleted ONLY if they are in 'Terminating' state
+while kubectl get namespace ingress-nginx argocd aegis-system 2>&1 | grep -q "Terminating"; do
+    echo "⚠️  Namespaces are currently in 'Terminating' state, waiting for cleanup..."
+    sleep 3
+done
+
 kubectl create namespace ingress-nginx || true
 kubectl create namespace argocd || true
 kubectl create namespace aegis-system || true

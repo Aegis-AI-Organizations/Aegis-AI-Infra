@@ -26,4 +26,9 @@ kubectl delete namespace aegis-system --ignore-not-found || true
 kubectl delete namespace argocd --ignore-not-found || true
 kubectl delete namespace ingress-nginx --ignore-not-found || true
 
+echo "⏳ Waiting for namespaces to be fully removed (this may take a minute)..."
+while kubectl get namespace aegis-system argocd ingress-nginx >/dev/null 2>&1; do
+  sleep 2
+done
+
 echo "✅ All Aegis pods and resources have been successfully stopped and removed."
