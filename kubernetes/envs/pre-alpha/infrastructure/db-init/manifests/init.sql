@@ -6,8 +6,11 @@ CREATE TABLE IF NOT EXISTS scans (
     target_image VARCHAR(255) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'RUNNING',
     started_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMPTZ
+    completed_at TIMESTAMPTZ,
+    report_pdf BYTEA
 );
+
+ALTER TABLE scans ADD COLUMN IF NOT EXISTS report_pdf BYTEA;
 
 CREATE TABLE IF NOT EXISTS vulnerabilities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
