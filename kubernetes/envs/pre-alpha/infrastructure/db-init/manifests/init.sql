@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS scans (
     target_image VARCHAR(255) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     started_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMPTZ
+    completed_at TIMESTAMPTZ,
+    report_pdf BYTEA
 );
 
 CREATE TABLE IF NOT EXISTS vulnerabilities (
