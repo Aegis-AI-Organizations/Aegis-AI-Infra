@@ -88,11 +88,33 @@ fi
 kubectl rollout status deployment/aegis-temporal-$ENV-admintools -n aegis-system --timeout=300s
 sleep 5 # Extra buffer for internal services
 
+# Wait for Temporal Cluster to be SERVING
+echo "⏳ Waiting for Temporal Cluster to be healthy..."
+timeout=300
+elapsed=0
+while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator cluster health 2>/dev/null | grep -q "SERVING"; do
+    if [ $elapsed -ge $timeout ]; then
+        echo "❌ Timeout waiting for Temporal Cluster to become healthy."
+        exit 1
+    fi
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
+
 # Check if namespace already exists, otherwise create it
-if ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe -n default >/dev/null 2>&1; then
+echo "⚙️ Ensuring 'default' Temporal namespace exists..."
+timeout=120
+elapsed=0
+while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe -n default >/dev/null 2>&1; do
+    if [ $elapsed -ge $timeout ]; then
+        echo "❌ Timeout creating Temporal namespace."
+        exit 1
+    fi
     echo "⚙️ Creating 'default' Temporal namespace..."
-    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n default --retention 24h --description "Default namespace for Aegis" || true
-fi
+    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n default --retention 24h --description "Default namespace for Aegis" >/dev/null 2>&1 || true
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
 
 echo "⏳ Waiting for Aegis services to be ready..."
 kubectl rollout status deployment/api-gateway-$ENV -n aegis-system --timeout=300s
