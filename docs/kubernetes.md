@@ -121,13 +121,18 @@ The `pre-alpha` environment includes a dedicated schema initialization `Job`:
 - Job + SQL: `kubernetes/envs/pre-alpha/infrastructure/db-init/manifests/`
 - SQL script: `init.sql` (idempotent, safe to re-run)
 
+Current `scans` schema includes a binary report storage column:
+
+- `report_pdf BYTEA` (generated PDF report payload)
+
 To run/update the job manually:
 
 ```bash
 kubectl apply -k kubernetes/envs/pre-alpha/infrastructure/db-init/manifests
 ```
 
-To re-run it after a successful execution:
+To re-run it after a successful execution (for example, to apply a schema update such as
+`scans.report_pdf`):
 
 ```bash
 kubectl delete job -n aegis-system aegis-db-init-pre-alpha
