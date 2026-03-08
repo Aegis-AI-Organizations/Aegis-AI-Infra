@@ -10,8 +10,6 @@ CREATE TABLE IF NOT EXISTS scans (
     report_pdf BYTEA
 );
 
-ALTER TABLE scans ADD COLUMN IF NOT EXISTS report_pdf BYTEA;
-
 CREATE TABLE IF NOT EXISTS vulnerabilities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     scan_id UUID NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
