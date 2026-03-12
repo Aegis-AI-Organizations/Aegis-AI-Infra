@@ -21,6 +21,10 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
 
+env:
+  - name: API_GATEWAY_URL
+    value: "/api"
+
 envFrom:
   - secretRef:
       name: aegis-env
