@@ -6,5 +6,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Skip
-        run: echo "No specific build/test steps defined for this repository type."
+      - name: Install Tooling
+        run: |
+          sudo snap install helm --classic
+          curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+      - name: Validate Shell Scripts
+        run: |
+          for script in scripts/*.sh; do
+            bash -n "$script"
+          done
+      - name: Validate Helm Charts
+        run: |
+          find kubernetes/charts -name Chart.yaml -print0 | while IFS= read -r -d '' chart; do
+            helm lint "$(dirname "$chart")"
+          done
+      - name: Validate Kustomize Manifests
+        run: |
+          find kubernetes -name kustomization.yaml -print0 | while IFS= read -r -d '' manifest; do
+            kubectl kustomize "$(dirname "$manifest")" >/dev/null
+          done
+      - name: Coverage Policy
+        run: |
+          echo "Coverage N/A: this repository is declarative infrastructure plus shell entrypoints, validated via syntax and manifest checks in CI."
