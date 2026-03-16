@@ -46,3 +46,35 @@ initContainers:
   - name: wait-for-temporal
     image: alpine
     command: ["sh", "-c", "until nc -zv aegis-temporal-pre-alpha-frontend.aegis-system.svc.cluster.local 7233; do echo 'Waiting for temporal...'; sleep 3; done"]
+
+networkPolicy:
+  enabled: true
+  allowDNS: true
+  ingress:
+    - fromEntities:
+        - world
+      ports:
+        - port: 8080
+          protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: postgresql
+            app.kubernetes.io/instance: aegis-postgres-pre-alpha
+      ports:
+        - port: 5432
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: aegis-temporal-pre-alpha
+            app.kubernetes.io/component: frontend
+      ports:
+        - port: 7233
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app: brain-pre-alpha
+      ports:
+        - port: 50051
+          protocol: TCP

@@ -50,3 +50,9 @@ rbac:
   create: false
   clusterRole: false
   rules: []
+
+networkPolicy:
+  enabled: false
+  allowDNS: true
+  ingress: []
+  egress: []

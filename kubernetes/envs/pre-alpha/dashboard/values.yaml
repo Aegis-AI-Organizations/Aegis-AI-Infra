@@ -36,3 +36,13 @@ resources:
   requests:
     cpu: 50m
     memory: 64Mi
+
+networkPolicy:
+  enabled: true
+  allowDNS: true
+  ingress:
+    - fromEntities:
+        - world
+      ports:
+        - port: 80
+          protocol: TCP
