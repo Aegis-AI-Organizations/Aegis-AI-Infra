@@ -11,16 +11,18 @@ spec:
       app: {{ .Values.nameOverride | default .Release.Name }}
   ingress:
     {{- range .Values.networkPolicy.ingress }}
-    - fromEndpoints:
+    - {{- if .fromEndpoints }}
+      fromEndpoints:
         {{- range .fromEndpoints }}
         - {{ toYaml . | nindent 10 | trim }}
         {{- end }}
-        {{- if .fromEntities }}
-        - fromEntities:
-            {{- range .fromEntities }}
-            - {{ . }}
-            {{- end }}
+      {{- end }}
+      {{- if .fromEntities }}
+      fromEntities:
+        {{- range .fromEntities }}
+        - {{ . }}
         {{- end }}
+      {{- end }}
       toPorts:
         {{- range .ports }}
         - ports:
@@ -30,16 +32,18 @@ spec:
     {{- end }}
   egress:
     {{- range .Values.networkPolicy.egress }}
-    - toEndpoints:
+    - {{- if .toEndpoints }}
+      toEndpoints:
         {{- range .toEndpoints }}
         - {{ toYaml . | nindent 10 | trim }}
         {{- end }}
-        {{- if .toEntities }}
-        - toEntities:
-            {{- range .toEntities }}
-            - {{ . }}
-            {{- end }}
+      {{- end }}
+      {{- if .toEntities }}
+      toEntities:
+        {{- range .toEntities }}
+        - {{ . }}
         {{- end }}
+      {{- end }}
       {{- if .toServices }}
       toServices:
         {{- range .toServices }}
