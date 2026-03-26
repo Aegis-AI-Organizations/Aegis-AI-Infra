@@ -1,0 +1,21 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: defaults-postgres
+  namespace: aegis-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: aegis-postgres-pre-alpha
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: brain-pre-alpha
+        - matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: aegis-temporal-pre-alpha
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP

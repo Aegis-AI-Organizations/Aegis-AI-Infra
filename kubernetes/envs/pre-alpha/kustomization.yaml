@@ -8,4 +8,5 @@ resources:
   - infrastructure/db-init/application.yaml
   - infrastructure/postgres/application.yaml
   - infrastructure/temporal/application.yaml
+  - network-policies/application.yaml
   - pentest-worker/application.yaml

@@ -1,0 +1,16 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: strict-sandbox-isolation
+spec:
+  endpointSelector:
+    matchLabels:
+      app: vulnerable-target
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": aegis-system
+            app: pentest-worker-pre-alpha
+  egress:
+    - toEntities:
+        - world
