@@ -10,4 +10,4 @@ resources:
   - infrastructure/postgres/application.yaml
   - infrastructure/temporal/application.yaml
   - network-policies/application.yaml
-  - pentest-worker
+  - pentest-worker/application.yaml
