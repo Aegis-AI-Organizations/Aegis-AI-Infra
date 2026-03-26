@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
-    targetRevision: HEAD
+    targetRevision: main
     path: kubernetes/envs/mvp
   destination:
     server: https://kubernetes.default.svc

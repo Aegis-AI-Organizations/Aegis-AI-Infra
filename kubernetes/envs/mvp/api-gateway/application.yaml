@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
-    targetRevision: HEAD
+    targetRevision: main
     path: kubernetes/charts/aegis-service
     helm:
       valueFiles:
