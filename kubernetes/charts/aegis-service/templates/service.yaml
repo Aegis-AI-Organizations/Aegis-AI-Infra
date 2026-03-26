@@ -7,9 +7,18 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: http
+      port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort | default .Values.service.port }}
       protocol: TCP
-      name: http
+    {{- if .Values.service.grpcPort }}
+    - name: grpc
+      port: {{ .Values.service.grpcPort }}
+      targetPort: {{ .Values.service.grpcTargetPort | default .Values.service.grpcPort }}
+      protocol: TCP
+    {{- end }}
+    {{- range .Values.service.extraPorts }}
+    - {{ toYaml . | nindent 6 | trim }}
+    {{- end }}
   selector:
     app: {{ .Values.nameOverride | default .Release.Name }}

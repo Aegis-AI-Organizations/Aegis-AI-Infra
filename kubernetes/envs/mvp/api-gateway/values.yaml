@@ -24,6 +24,8 @@ ingress:
 env:
   - name: DB_HOST
     value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local:5432"
+  - name: BRAIN_GRPC_ADDR
+    value: "brain-mvp:50051"
   - name: TEMPORAL_HOST
     value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
 

@@ -27,6 +27,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.targetPort | default .Values.service.port }}
+              name: http
+            {{- if .Values.service.grpcPort }}
+            - containerPort: {{ .Values.service.grpcTargetPort | default .Values.service.grpcPort }}
+              name: grpc
+            {{- end }}
           {{- if .Values.env }}
           env:
 {{ toYaml .Values.env | indent 12 }}

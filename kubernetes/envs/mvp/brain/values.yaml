@@ -11,6 +11,7 @@ service:
   type: ClusterIP
   port: 8080
   targetPort: 8080
+  grpcPort: 50051
 
 env:
   - name: DB_HOST
