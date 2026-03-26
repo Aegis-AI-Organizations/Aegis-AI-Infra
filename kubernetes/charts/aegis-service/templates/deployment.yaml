@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: {{ .Values.nameOverride | default .Release.Name }}
+      {{- if .Values.annotations }}
+      annotations:
+{{ toYaml .Values.annotations | indent 8 }}
+      {{- end }}
     spec:
       {{- if .Values.initContainers }}
       initContainers:
