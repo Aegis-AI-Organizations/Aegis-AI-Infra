@@ -1,6 +1,6 @@
 nameOverride: "api-gateway-mvp"
 annotations:
-  restart-dummy: "2"
+  restart-dummy: "3"
 
 replicaCount: 1
 

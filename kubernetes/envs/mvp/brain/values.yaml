@@ -1,4 +1,6 @@
 nameOverride: "brain-mvp"
+annotations:
+  restart-dummy: "1"
 
 replicaCount: 1
 
