@@ -1,4 +1,4 @@
-# [FR] # Kubernetes — Aegis AI Infra
+# Kubernetes — Aegis AI Infra
 
 This document describes the Kubernetes architecture used in the Aegis AI project, the deployment patterns, and the manifest structure.
 

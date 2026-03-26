@@ -1,4 +1,4 @@
-# [FR] # 🚀 Getting Started — Aegis AI Infra (Local Setup)
+# 🚀 Getting Started — Aegis AI Infra (Local Setup)
 
 This guide walks you through running the full Aegis AI infrastructure locally on your machine, using **Docker Desktop** (or `kind`/`minikube`) as your Kubernetes cluster.
 
