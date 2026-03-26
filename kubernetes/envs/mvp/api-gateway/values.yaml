@@ -26,14 +26,30 @@ ingress:
 env:
   - name: DB_HOST
     value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local:5432"
+  - name: POSTGRES_USER
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_USER
+  - name: POSTGRES_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_PASSWORD
+  - name: POSTGRES_DB
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_DB
   - name: BRAIN_GRPC_ADDR
     value: "brain-mvp:50051"
   - name: TEMPORAL_HOST
     value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
-
-envFrom:
-  - secretRef:
-      name: aegis-env
+  - name: TEMPORAL_NAMESPACE
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: TEMPORAL_NAMESPACE
 
 resources:
   limits:

@@ -25,10 +25,6 @@ env:
   - name: API_GATEWAY_URL
     value: "/api"
 
-envFrom:
-  - secretRef:
-      name: aegis-env
-
 resources:
   limits:
     cpu: 100m
