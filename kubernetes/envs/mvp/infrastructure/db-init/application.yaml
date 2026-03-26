@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: aegis-network-policies-pre-alpha
+  name: aegis-db-init-mvp
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
     targetRevision: HEAD
-    path: kubernetes/envs/pre-alpha/network-policies/manifests
+    path: kubernetes/envs/mvp/infrastructure/db-init/manifests
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system

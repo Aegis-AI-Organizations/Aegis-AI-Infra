@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: aegis-temporal-pre-alpha
+  name: aegis-temporal-mvp
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -21,7 +21,7 @@ spec:
                 driver: "sql"
                 sql:
                   driver: "postgres12"
-                  host: "aegis-postgres-pre-alpha-postgresql"
+                  host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
@@ -31,7 +31,7 @@ spec:
                 driver: "sql"
                 sql:
                   driver: "postgres12"
-                  host: "aegis-postgres-pre-alpha-postgresql"
+                  host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
                   existingSecret: "aegis-env"

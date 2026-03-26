@@ -7,13 +7,13 @@ spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: temporal
-      app.kubernetes.io/instance: aegis-temporal-pre-alpha
+      app.kubernetes.io/instance: aegis-temporal-mvp
   ingress:
     - fromEndpoints:
         - matchLabels:
-            app: brain-pre-alpha
+            app: brain-mvp
         - matchLabels:
-            app: pentest-worker-pre-alpha
+            app: pentest-worker-mvp
       toPorts:
         - ports:
             - port: "7233"
@@ -22,7 +22,7 @@ spec:
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: postgresql
-            app.kubernetes.io/instance: aegis-postgres-pre-alpha
+            app.kubernetes.io/instance: aegis-postgres-mvp
       toPorts:
         - ports:
             - port: "5432"

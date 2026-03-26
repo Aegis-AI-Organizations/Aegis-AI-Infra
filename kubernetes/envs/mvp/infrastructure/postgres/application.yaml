@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: aegis-postgres-pre-alpha
+  name: aegis-postgres-mvp
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"

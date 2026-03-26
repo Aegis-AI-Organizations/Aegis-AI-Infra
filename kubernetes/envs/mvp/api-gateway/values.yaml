@@ -1,4 +1,4 @@
-nameOverride: "api-gateway-pre-alpha"
+nameOverride: "api-gateway-mvp"
 
 replicaCount: 1
 
@@ -16,16 +16,16 @@ ingress:
   enabled: true
   className: "nginx"
   hosts:
-    - host: api.aegis.pre-alpha.local
+    - host: api.aegis.mvp.local
       paths:
         - path: /
           pathType: ImplementationSpecific
 
 env:
   - name: DB_HOST
-    value: "aegis-postgres-pre-alpha-postgresql.aegis-system.svc.cluster.local:5432"
+    value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local:5432"
   - name: TEMPORAL_HOST
-    value: "aegis-temporal-pre-alpha-frontend.aegis-system.svc.cluster.local:7233"
+    value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
 
 envFrom:
   - secretRef:
@@ -42,10 +42,10 @@ resources:
 initContainers:
   - name: wait-for-postgres
     image: alpine
-    command: ["sh", "-c", "until nc -zv aegis-postgres-pre-alpha-postgresql.aegis-system.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
+    command: ["sh", "-c", "until nc -zv aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
   - name: wait-for-temporal
     image: alpine
-    command: ["sh", "-c", "until nc -zv aegis-temporal-pre-alpha-frontend.aegis-system.svc.cluster.local 7233; do echo 'Waiting for temporal...'; sleep 3; done"]
+    command: ["sh", "-c", "until nc -zv aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local 7233; do echo 'Waiting for temporal...'; sleep 3; done"]
 
 networkPolicy:
   enabled: true
@@ -59,7 +59,7 @@ networkPolicy:
   egress:
     - toEndpoints:
         - matchLabels:
-            app: brain-pre-alpha
+            app: brain-mvp
       ports:
         - port: 50051
           protocol: TCP

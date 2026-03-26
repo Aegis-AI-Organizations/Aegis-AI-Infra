@@ -1,4 +1,4 @@
-nameOverride: "dashboard-pre-alpha"
+nameOverride: "dashboard-mvp"
 
 replicaCount: 1
 
@@ -16,7 +16,7 @@ ingress:
   enabled: true
   className: "nginx"
   hosts:
-    - host: app.aegis.pre-alpha.local
+    - host: app.aegis.mvp.local
       paths:
         - path: /
           pathType: ImplementationSpecific

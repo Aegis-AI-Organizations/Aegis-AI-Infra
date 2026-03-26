@@ -1,4 +1,4 @@
-nameOverride: "brain-pre-alpha"
+nameOverride: "brain-mvp"
 
 replicaCount: 1
 
@@ -14,9 +14,9 @@ service:
 
 env:
   - name: DB_HOST
-    value: "aegis-postgres-pre-alpha-postgresql.aegis-system.svc.cluster.local:5432"
+    value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local:5432"
   - name: TEMPORAL_HOST
-    value: "aegis-temporal-pre-alpha-frontend.aegis-system.svc.cluster.local:7233"
+    value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
 
 envFrom:
   - secretRef:
@@ -44,10 +44,10 @@ rbac:
 initContainers:
   - name: wait-for-postgres
     image: alpine
-    command: ["sh", "-c", "until nc -zv aegis-postgres-pre-alpha-postgresql.aegis-system.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
+    command: ["sh", "-c", "until nc -zv aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
   - name: wait-for-temporal
     image: alpine
-    command: ["sh", "-c", "until nc -zv aegis-temporal-pre-alpha-frontend.aegis-system.svc.cluster.local 7233; do echo 'Waiting for temporal...'; sleep 3; done"]
+    command: ["sh", "-c", "until nc -zv aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local 7233; do echo 'Waiting for temporal...'; sleep 3; done"]
 
 networkPolicy:
   enabled: true
@@ -55,7 +55,7 @@ networkPolicy:
   ingress:
     - fromEndpoints:
         - matchLabels:
-            app: api-gateway-pre-alpha
+            app: api-gateway-mvp
       ports:
         - port: 50051
           protocol: TCP
@@ -63,14 +63,14 @@ networkPolicy:
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: postgresql
-            app.kubernetes.io/instance: aegis-postgres-pre-alpha
+            app.kubernetes.io/instance: aegis-postgres-mvp
       ports:
         - port: 5432
           protocol: TCP
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: temporal
-            app.kubernetes.io/instance: aegis-temporal-pre-alpha
+            app.kubernetes.io/instance: aegis-temporal-mvp
             app.kubernetes.io/component: frontend
       ports:
         - port: 7233
