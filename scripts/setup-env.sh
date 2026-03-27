@@ -20,10 +20,51 @@ fi
 
 echo "🎡 Initializing Aegis infrastructure for environment [$ENV]..."
 
-# Pre-check: Wait for namespaces to be fully deleted ONLY if they are in 'Terminating' state
-while kubectl get namespace ingress-nginx argocd aegis-system 2>&1 | grep -q "Terminating"; do
+# Pre-check: avoid infinite wait when namespaces are stuck in Terminating.
+NAMESPACES_TO_CHECK=(ingress-nginx argocd aegis-system keda)
+
+cleanup_stale_keda_apiservices() {
+    kubectl delete apiservice v1beta1.external.metrics.k8s.io --ignore-not-found >/dev/null 2>&1 || true
+    kubectl delete apiservice v1alpha1.keda.sh --ignore-not-found >/dev/null 2>&1 || true
+    kubectl delete apiservice v1alpha1.eventing.keda.sh --ignore-not-found >/dev/null 2>&1 || true
+}
+
+is_any_namespace_terminating() {
+    for ns in "${NAMESPACES_TO_CHECK[@]}"; do
+        phase=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null || true)
+        if [[ "$phase" == "Terminating" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+wait_timeout=120
+elapsed=0
+while is_any_namespace_terminating; do
     echo "⚠️  Namespaces are currently in 'Terminating' state, waiting for cleanup..."
+    if [ $elapsed -ge 15 ]; then
+        # Common local-cluster issue: stale KEDA APIService blocks namespace discovery/finalization.
+        cleanup_stale_keda_apiservices
+    fi
+    if [ $elapsed -ge $wait_timeout ]; then
+        echo "⚠️  Timeout reached. Attempting to clear namespace finalizers..."
+        for ns in "${NAMESPACES_TO_CHECK[@]}"; do
+            phase=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null || true)
+            if [[ "$phase" == "Terminating" ]]; then
+                kubectl patch namespace "$ns" --type=merge -p '{"spec":{"finalizers":[]}}' >/dev/null 2>&1 || true
+            fi
+        done
+        sleep 5
+        if is_any_namespace_terminating; then
+            echo "❌ Some namespaces are still stuck in 'Terminating'."
+            echo "   Run './scripts/teardown-env.sh $ENV' again and retry setup."
+            exit 1
+        fi
+        break
+    fi
     sleep 3
+    elapsed=$((elapsed + 3))
 done
 
 kubectl create namespace ingress-nginx || true
