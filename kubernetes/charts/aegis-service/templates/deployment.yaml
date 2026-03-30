@@ -13,13 +13,29 @@ spec:
     metadata:
       labels:
         app: {{ .Values.nameOverride | default .Release.Name }}
+      {{- if .Values.annotations }}
+      annotations:
+{{ toYaml .Values.annotations | indent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.initContainers }}
+      initContainers:
+{{ toYaml .Values.initContainers | indent 8 }}
+      {{- end }}
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.nameOverride | default .Release.Name }}
+      {{- end }}
       containers:
         - name: {{ .Values.nameOverride | default .Release.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.targetPort | default .Values.service.port }}
+              name: http
+            {{- if .Values.service.grpcPort }}
+            - containerPort: {{ .Values.service.grpcTargetPort | default .Values.service.grpcPort }}
+              name: grpc
+            {{- end }}
           {{- if .Values.env }}
           env:
 {{ toYaml .Values.env | indent 12 }}
@@ -37,12 +53,26 @@ spec:
             httpGet:
               path: {{ .Values.probes.liveness.path }}
               port: {{ .Values.probes.liveness.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds | default 1 }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold | default 3 }}
           readinessProbe:
             httpGet:
               path: {{ .Values.probes.readiness.path }}
               port: {{ .Values.probes.readiness.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds | default 1 }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold | default 3 }}
+          {{- if .Values.probes.startup }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.probes.startup.path }}
+              port: {{ .Values.probes.startup.port }}
+            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds | default 5 }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds | default 1 }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold | default 30 }}
+          {{- end }}
           {{- end }}

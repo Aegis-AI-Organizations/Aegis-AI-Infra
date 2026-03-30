@@ -1,0 +1,76 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.nameOverride | default .Release.Name }}
+  labels:
+    app: {{ .Values.nameOverride | default .Release.Name }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app: {{ .Values.nameOverride | default .Release.Name }}
+  ingress:
+    {{- range .Values.networkPolicy.ingress }}
+    - {{- if .fromEndpoints }}
+      fromEndpoints:
+        {{- range .fromEndpoints }}
+        - {{ toYaml . | nindent 10 | trim }}
+        {{- end }}
+      {{- end }}
+      {{- if .fromEntities }}
+      fromEntities:
+        {{- range .fromEntities }}
+        - {{ . }}
+        {{- end }}
+      {{- end }}
+      toPorts:
+        {{- range .ports }}
+        - ports:
+            - port: "{{ .port }}"
+              protocol: {{ .protocol | default "TCP" }}
+        {{- end }}
+    {{- end }}
+  egress:
+    {{- range .Values.networkPolicy.egress }}
+    - {{- if .toEndpoints }}
+      toEndpoints:
+        {{- range .toEndpoints }}
+        - {{ toYaml . | nindent 10 | trim }}
+        {{- end }}
+      {{- end }}
+      {{- if .toEntities }}
+      toEntities:
+        {{- range .toEntities }}
+        - {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- if .toServices }}
+      toServices:
+        {{- range .toServices }}
+        - k8sService:
+            {{- toYaml . | nindent 12 }}
+        {{- end }}
+      {{- end }}
+      {{- if .ports }}
+      toPorts:
+        {{- range .ports }}
+        - ports:
+            - port: "{{ .port }}"
+              protocol: {{ .protocol | default "TCP" }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.networkPolicy.allowDNS }}
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+    {{- end }}
+{{- end }}

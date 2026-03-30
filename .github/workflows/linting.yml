@@ -26,6 +26,13 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin latest
         fi
 
+    - name: Validate Kustomize manifests (MVP)
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/kubectl
+        kubectl kustomize kubernetes/envs/mvp >/dev/null
+
     - name: Run code linters (pre-commit)
       uses: pre-commit/action@v3.0.1
 

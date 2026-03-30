@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aegis-db-init-mvp
+  namespace: aegis-system
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: aegis-postgres-mvp-postgresql
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: aegis_db
+            - name: PGUSER
+              value: aegis_admin
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aegis-env
+                  key: POSTGRES_PASSWORD
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              echo "Waiting for PostgreSQL at ${PGHOST}:${PGPORT}..."
+              until psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" -c "SELECT 1" >/dev/null 2>&1; do
+                echo "PostgreSQL is not reachable yet, retrying in 5s..."
+                sleep 5
+              done
+
+              echo "Running database initialization script..."
+              psql \
+                -h "${PGHOST}" \
+                -p "${PGPORT}" \
+                -U "${PGUSER}" \
+                -d "${PGDATABASE}" \
+                -v ON_ERROR_STOP=1 \
+                -f /sql/init.sql
+
+              echo "Database initialization completed."
+          volumeMounts:
+            - name: db-init-sql
+              mountPath: /sql
+              readOnly: true
+      volumes:
+        - name: db-init-sql
+          configMap:
+            name: aegis-db-init-sql

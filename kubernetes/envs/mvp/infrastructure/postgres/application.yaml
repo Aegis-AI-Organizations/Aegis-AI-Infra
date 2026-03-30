@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-postgres-mvp
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: postgresql
+    targetRevision: 18.5.1
+    helm:
+      valuesObject:
+        global:
+          postgresql:
+            auth:
+              existingSecret: "aegis-env"
+              secretKeys:
+                adminPasswordKey: "POSTGRES_PASSWORD"
+                userPasswordKey: "POSTGRES_PASSWORD"
+              database: "aegis_db"
+              username: "aegis_admin"
+        primary:
+          persistence:
+            enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aegis-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

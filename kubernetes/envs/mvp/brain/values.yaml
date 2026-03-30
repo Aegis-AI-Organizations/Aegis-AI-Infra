@@ -1,0 +1,101 @@
+nameOverride: "brain-mvp"
+annotations:
+  restart-dummy: "1"
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-brain
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  grpcPort: 50051
+
+env:
+  - name: DB_HOST
+    value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local:5432"
+  - name: POSTGRES_USER
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_USER
+  - name: POSTGRES_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_PASSWORD
+  - name: POSTGRES_DB
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_DB
+  - name: TEMPORAL_HOST
+    value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
+  - name: TEMPORAL_NAMESPACE
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: TEMPORAL_NAMESPACE
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true
+  clusterRole: true
+  rules:
+    - apiGroups: ["*"]
+      resources: ["*"]
+      verbs: ["*"]
+
+initContainers:
+  - name: wait-for-postgres
+    image: alpine
+    command: ["sh", "-c", "until nc -zv aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
+  - name: wait-for-temporal
+    image: alpine
+    command: ["sh", "-c", "until nc -zv aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local 7233; do echo 'Waiting for temporal...'; sleep 3; done"]
+
+networkPolicy:
+  enabled: true
+  allowDNS: true
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway-mvp
+      ports:
+        - port: 50051
+          protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: postgresql
+            app.kubernetes.io/instance: aegis-postgres-mvp
+      ports:
+        - port: 5432
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: aegis-temporal-mvp
+            app.kubernetes.io/component: frontend
+      ports:
+        - port: 7233
+          protocol: TCP
+    - toEntities:
+        - kube-apiserver
+      ports:
+        - port: 443
+          protocol: TCP
