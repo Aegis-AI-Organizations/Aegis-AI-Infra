@@ -1,22 +1,35 @@
 -- Seed script for Aegis AI
 -- Initializes local developer environment.
 
-INSERT INTO companies (id, name, logo_url, is_active)
-VALUES ('00000000-0000-0000-0000-000000000001', 'Aegis AI', 'https://aegis-ai.com/logo.png', true)
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO users (id, company_id, email, password_hash, role, is_active)
-VALUES (
-    '00000000-0000-0000-0000-000000000002',
-    '00000000-0000-0000-0000-000000000001',
-    'admin@aegis-ai.com',
-    '$2a$10$wE70pU2M2n1tS9.HlI1vIuXmB76I7W06S3WfH6G8xO1ev4k5aZ6', -- Default: admin_password_123
+WITH upsert_company AS (
+  INSERT INTO companies (name, logo_url, is_active)
+  VALUES ('Aegis AI', 'https://aegis-ai.com/logo.png', true)
+  ON CONFLICT (name) DO UPDATE SET
+    logo_url = EXCLUDED.logo_url,
+    is_active = EXCLUDED.is_active
+  RETURNING id
+), upsert_user AS (
+  INSERT INTO users (company_id, email, password_hash, role, is_active)
+  VALUES (
+    (SELECT id FROM upsert_company),
+    :'AEGIS_SEED_USER_EMAIL',
+    crypt(:'AEGIS_SEED_USER_PASSWORD', gen_salt('bf', 10)),
     'superadmin',
     true
+  )
+  ON CONFLICT (email) DO UPDATE SET
+    password_hash = CASE
+      WHEN users.password_hash = crypt(:'AEGIS_SEED_USER_PASSWORD', users.password_hash)
+        THEN users.password_hash
+      ELSE crypt(:'AEGIS_SEED_USER_PASSWORD', gen_salt('bf', 10))
+    END,
+    role = EXCLUDED.role,
+    is_active = EXCLUDED.is_active,
+    company_id = EXCLUDED.company_id
+  RETURNING id, company_id
 )
-ON CONFLICT (email) DO NOTHING;
-
-UPDATE companies
-SET owner_id = '00000000-0000-0000-0000-000000000002'
-WHERE id = '00000000-0000-0000-0000-000000000001'
-  AND (owner_id IS NULL OR owner_id != '00000000-0000-0000-0000-000000000002');
+UPDATE companies c
+SET owner_id = u.id
+FROM upsert_user u
+WHERE c.id = u.company_id
+  AND c.owner_id IS DISTINCT FROM u.id;

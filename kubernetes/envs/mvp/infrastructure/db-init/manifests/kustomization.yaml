@@ -10,6 +10,7 @@ configMapGenerator:
   - name: aegis-db-init-sql
     files:
       - init.sql
+      - seed.sql
 
 generatorOptions:
   disableNameSuffixHash: true

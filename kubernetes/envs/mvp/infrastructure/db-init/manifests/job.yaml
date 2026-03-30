@@ -26,6 +26,16 @@ spec:
                 secretKeyRef:
                   name: aegis-env
                   key: POSTGRES_PASSWORD
+            - name: AEGIS_SEED_USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: aegis-env
+                  key: AEGIS_SEED_USER_EMAIL
+            - name: AEGIS_SEED_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aegis-env
+                  key: AEGIS_SEED_USER_PASSWORD
           command:
             - /bin/bash
             - -ec
@@ -44,6 +54,20 @@ spec:
                 -d "${PGDATABASE}" \
                 -v ON_ERROR_STOP=1 \
                 -f /sql/init.sql
+
+              : "${AEGIS_SEED_USER_EMAIL:?AEGIS_SEED_USER_EMAIL is required in secret aegis-env}"
+              : "${AEGIS_SEED_USER_PASSWORD:?AEGIS_SEED_USER_PASSWORD is required in secret aegis-env}"
+
+              echo "Running seed script for initial Aegis user..."
+              psql \
+                -h "${PGHOST}" \
+                -p "${PGPORT}" \
+                -U "${PGUSER}" \
+                -d "${PGDATABASE}" \
+                -v ON_ERROR_STOP=1 \
+                -v AEGIS_SEED_USER_EMAIL="${AEGIS_SEED_USER_EMAIL}" \
+                -v AEGIS_SEED_USER_PASSWORD="${AEGIS_SEED_USER_PASSWORD}" \
+                -f /sql/seed.sql
 
               echo "Database initialization completed."
           volumeMounts:

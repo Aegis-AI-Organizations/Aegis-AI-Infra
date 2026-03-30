@@ -9,6 +9,27 @@ if [ -f "$ENV_FILE" ]; then
   # shellcheck source=../.env
   source "$ENV_FILE"
   set +o allexport
+
+    required_env_vars=(
+        POSTGRES_DB
+        POSTGRES_USER
+        POSTGRES_PASSWORD
+        password
+        AEGIS_SEED_USER_EMAIL
+        AEGIS_SEED_USER_PASSWORD
+    )
+
+    missing_vars=()
+    for var_name in "${required_env_vars[@]}"; do
+        if [[ -z "${!var_name}" ]]; then
+            missing_vars+=("$var_name")
+        fi
+    done
+
+    if [ ${#missing_vars[@]} -gt 0 ]; then
+        echo "❌ Missing required variables in .env: ${missing_vars[*]}"
+        exit 1
+    fi
 fi
 
 ENV=$1
