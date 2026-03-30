@@ -32,3 +32,10 @@ CREATE INDEX IF NOT EXISTS idx_vulnerabilities_scan_id ON vulnerabilities (scan_
 CREATE INDEX IF NOT EXISTS idx_evidences_vulnerability_id ON evidences (vulnerability_id);
 CREATE INDEX IF NOT EXISTS idx_scans_status ON scans (status);
 CREATE INDEX IF NOT EXISTS idx_scans_started_at ON scans (started_at);
+
+CREATE TABLE IF NOT EXISTS licenses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    license_status VARCHAR(50) NOT NULL DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
