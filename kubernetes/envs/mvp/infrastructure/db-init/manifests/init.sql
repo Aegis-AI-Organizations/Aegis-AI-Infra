@@ -1,7 +1,19 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- 1. Base Multi-tenant Structure
+CREATE TABLE IF NOT EXISTS companies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    logo_url VARCHAR(255),
+    owner_id UUID, -- Circular reference handled via ALTER TABLE below
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Core Scanning Structure
 CREATE TABLE IF NOT EXISTS scans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     temporal_workflow_id VARCHAR(255) UNIQUE NOT NULL,
     target_image VARCHAR(255) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
@@ -9,6 +21,25 @@ CREATE TABLE IF NOT EXISTS scans (
     completed_at TIMESTAMPTZ,
     report_pdf BYTEA
 );
+
+-- Migration: Ensure company_id exists on 'scans' if table was created previously
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='scans' AND column_name='company_id' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE scans ADD COLUMN company_id UUID REFERENCES companies(id) ON DELETE CASCADE;
+    END IF;
+
+    -- Ensure company_id is NOT NULL (Schema Consistency)
+    -- This will fail-fast if there is existing data without a company_id
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='scans' AND column_name='company_id' AND is_nullable = 'YES' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE scans ALTER COLUMN company_id SET NOT NULL;
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS vulnerabilities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -28,11 +59,7 @@ CREATE TABLE IF NOT EXISTS evidences (
     captured_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_vulnerabilities_scan_id ON vulnerabilities (scan_id);
-CREATE INDEX IF NOT EXISTS idx_evidences_vulnerability_id ON evidences (vulnerability_id);
-CREATE INDEX IF NOT EXISTS idx_scans_status ON scans (status);
-CREATE INDEX IF NOT EXISTS idx_scans_started_at ON scans (started_at);
-
+-- 3. Licensing
 CREATE TABLE IF NOT EXISTS licenses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) UNIQUE NOT NULL,
@@ -40,24 +67,16 @@ CREATE TABLE IF NOT EXISTS licenses (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 4. Identity & Access Management
 DO $$ BEGIN
     CREATE TYPE user_role AS ENUM ('superadmin', 'owner', 'operator', 'viewer');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
-CREATE TABLE IF NOT EXISTS companies (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) UNIQUE NOT NULL,
-    logo_url VARCHAR(255),
-    owner_id UUID,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID REFERENCES companies(id),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'viewer',
@@ -65,6 +84,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Handle circular reference between companies and users
 DO $$ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint WHERE conname = 'fk_companies_owner'
@@ -82,5 +102,11 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 5. Indexes for Performance and Tenant Isolation
+CREATE INDEX IF NOT EXISTS idx_scans_company_id ON scans (company_id);
+CREATE INDEX IF NOT EXISTS idx_scans_status ON scans (status);
+CREATE INDEX IF NOT EXISTS idx_scans_started_at ON scans (started_at);
+CREATE INDEX IF NOT EXISTS idx_vulnerabilities_scan_id ON vulnerabilities (scan_id);
+CREATE INDEX IF NOT EXISTS idx_evidences_vulnerability_id ON evidences (vulnerability_id);
 CREATE INDEX IF NOT EXISTS idx_users_company_id ON users (company_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
