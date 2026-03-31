@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS companies (
 -- 2. Core Scanning Structure
 CREATE TABLE IF NOT EXISTS scans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID REFERENCES companies(id),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     temporal_workflow_id VARCHAR(255) UNIQUE NOT NULL,
     target_image VARCHAR(255) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
@@ -21,6 +21,18 @@ CREATE TABLE IF NOT EXISTS scans (
     completed_at TIMESTAMPTZ,
     report_pdf BYTEA
 );
+
+-- Migration: Ensure company_id exists on 'scans' if table was created previously
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='scans' AND column_name='company_id'
+    ) THEN
+        ALTER TABLE scans ADD COLUMN company_id UUID REFERENCES companies(id) ON DELETE CASCADE;
+        -- Note: If we had existing data, we would need a default company_id backfill here before making it NOT NULL.
+        -- ALTER TABLE scans ALTER COLUMN company_id SET NOT NULL;
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS vulnerabilities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -57,7 +69,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID REFERENCES companies(id),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'viewer',
