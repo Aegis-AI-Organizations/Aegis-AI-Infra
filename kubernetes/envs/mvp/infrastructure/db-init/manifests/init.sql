@@ -26,11 +26,18 @@ CREATE TABLE IF NOT EXISTS scans (
 DO $$ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name='scans' AND column_name='company_id'
+        WHERE table_name='scans' AND column_name='company_id' AND table_schema = 'public'
     ) THEN
         ALTER TABLE scans ADD COLUMN company_id UUID REFERENCES companies(id) ON DELETE CASCADE;
-        -- Note: If we had existing data, we would need a default company_id backfill here before making it NOT NULL.
-        -- ALTER TABLE scans ALTER COLUMN company_id SET NOT NULL;
+    END IF;
+
+    -- Ensure company_id is NOT NULL (Schema Consistency)
+    -- This will fail-fast if there is existing data without a company_id
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='scans' AND column_name='company_id' AND is_nullable = 'YES' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE scans ALTER COLUMN company_id SET NOT NULL;
     END IF;
 END $$;
 
