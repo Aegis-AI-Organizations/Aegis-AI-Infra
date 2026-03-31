@@ -40,6 +40,11 @@ env:
       secretKeyRef:
         name: aegis-env
         key: TEMPORAL_NAMESPACE
+  - name: JWT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: JWT_SECRET
 
 resources:
   limits:
