@@ -17,25 +17,25 @@ spec:
           replicaCount: 1
           config:
             persistence:
-              defaultStore: sql-store
-              visibilityStore: sql-visibility
-              sql-store:
+              defaultStore: default
+              visibilityStore: visibility
+              default:
                 sql:
-                  driver: "postgres12"
+                  driver: "postgres"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
-                  existingSecret: "aegis-temporal-mvp-default-store"
-                  secretKey: "password"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
                   database: "temporal"
-              sql-visibility:
+              visibility:
                 sql:
-                  driver: "postgres12"
+                  driver: "postgres"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
-                  existingSecret: "aegis-temporal-mvp-default-store"
-                  secretKey: "password"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
                   database: "temporal_visibility"
         schema:
           setup:
