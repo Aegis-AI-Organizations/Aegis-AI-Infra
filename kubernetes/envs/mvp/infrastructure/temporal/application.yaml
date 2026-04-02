@@ -27,10 +27,13 @@ spec:
           replicaCount: 1
           config:
             persistence:
-              default:
-                driver: "sql"
-              visibility:
-                driver: "sql"
+              # --- LE FIX FINAL EST ICI ---
+              # En passant des objets vides, Helm va complètement écraser
+              # la configuration Cassandra par défaut pour la laisser vide.
+              default: {}
+              visibility: {}
+              # -----------------------------
+
               defaultStore: default
               visibilityStore: visibility
               numHistoryShards: 512
