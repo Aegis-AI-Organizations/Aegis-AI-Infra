@@ -20,6 +20,10 @@ spec:
               defaultStore: default
               visibilityStore: visibility
               default:
+                driver: "sql"
+                cassandra:
+                  hosts: ["cassandra"]
+                  port: 9042
                 sql:
                   driver: "postgres12" # Wait! Chart uses pluginName?
                   host: "aegis-postgres-mvp-postgresql"
@@ -29,6 +33,10 @@ spec:
                   secretKey: "password"
                   database: "temporal"
               visibility:
+                driver: "sql"
+                cassandra:
+                  hosts: ["cassandra"]
+                  port: 9042
                 sql:
                   driver: "postgres12" # Wait! Chart uses pluginName?
                   host: "aegis-postgres-mvp-postgresql"
