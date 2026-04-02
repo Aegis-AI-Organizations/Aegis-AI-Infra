@@ -15,67 +15,28 @@ spec:
       valuesObject:
         server:
           replicaCount: 1
-          fullnameOverride: aegis-temporal-mvp
-          project: default
           config:
             persistence:
-              defaultStore: default
-              visibilityStore: visibility
               default:
+                driver: "sql"
                 sql:
                   driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
-                  existingSecret: "aegis-temporal-mvp-default-store"
-                  secretKey: "password"
+                  existingSecret: "aegis-env"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
                   database: "temporal"
               visibility:
+                driver: "sql"
                 sql:
                   driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
-                  existingSecret: "aegis-temporal-mvp-default-store"
-                  secretKey: "password"
+                  existingSecret: "aegis-env"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
                   database: "temporal_visibility"
-        frontend:
-          additionalEnv:
-            - name: TEMPORAL_CASSANDRA_ADDRESS
-              value: "cassandra:9042"
-            - name: CASSANDRA_REPLICATION_FACTOR
-              value: "1"
-            - name: DB
-              value: "postgresql"
-        history:
-          additionalEnv:
-            - name: TEMPORAL_CASSANDRA_ADDRESS
-              value: "cassandra:9042"
-            - name: CASSANDRA_REPLICATION_FACTOR
-              value: "1"
-            - name: DB
-              value: "postgresql"
-        matching:
-          additionalEnv:
-            - name: TEMPORAL_CASSANDRA_ADDRESS
-              value: "cassandra:9042"
-            - name: CASSANDRA_REPLICATION_FACTOR
-              value: "1"
-            - name: DB
-              value: "postgresql"
-        worker:
-          additionalEnv:
-            - name: TEMPORAL_CASSANDRA_ADDRESS
-              value: "cassandra:9042"
-            - name: CASSANDRA_REPLICATION_FACTOR
-              value: "1"
-            - name: DB
-              value: "postgresql"
-        schema:
-          setup:
-            enabled: true
-          update:
-            enabled: true
         prometheus:
           enabled: false
         grafana:
@@ -85,7 +46,8 @@ spec:
         postgresql:
           enabled: false
         elasticsearch:
-          enabled: false
+          replicas: 1
+          minimumMasterNodes: 1
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
