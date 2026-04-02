@@ -19,23 +19,24 @@ spec:
             persistence:
               defaultStore: default
               visibilityStore: visibility
-              datastores:
-                default:
-                  sql:
-                    pluginName: "postgres"
-                    databaseName: "temporal"
-                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
-                    user: "aegis_admin"
-                    existingSecret: "aegis-env"
-                    secretKey: "POSTGRES_PASSWORD"
-                visibility:
-                  sql:
-                    pluginName: "postgres"
-                    databaseName: "temporal_visibility"
-                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
-                    user: "aegis_admin"
-                    existingSecret: "aegis-env"
-                    secretKey: "POSTGRES_PASSWORD"
+              default:
+                sql:
+                  pluginName: "postgres12"
+                  host: "aegis-postgres-mvp-postgresql"
+                  port: 5432
+                  database: "temporal"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
+              visibility:
+                sql:
+                  pluginName: "postgres12"
+                  host: "aegis-postgres-mvp-postgresql"
+                  port: 5432
+                  database: "temporal_visibility"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
         schema:
           setup:
             enabled: true
