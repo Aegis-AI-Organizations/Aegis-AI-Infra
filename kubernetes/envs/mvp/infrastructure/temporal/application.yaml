@@ -15,9 +15,6 @@ spec:
       valuesObject:
         server:
           replicaCount: 1
-          additionalEnv:
-            - name: TEMPORAL_CONFIG_TEMPLATE
-              value: "/etc/temporal/config/config_template.yaml"
           config:
             persistence:
               defaultStore: default
@@ -42,6 +39,22 @@ spec:
                   existingSecret: "aegis-temporal-mvp-default-store"
                   secretKey: "password"
                   database: "temporal_visibility"
+        frontend:
+          additionalEnv:
+            - name: TEMPORAL_CONFIG_TEMPLATE
+              value: "/etc/temporal/config/config_template.yaml"
+        history:
+          additionalEnv:
+            - name: TEMPORAL_CONFIG_TEMPLATE
+              value: "/etc/temporal/config/config_template.yaml"
+        matching:
+          additionalEnv:
+            - name: TEMPORAL_CONFIG_TEMPLATE
+              value: "/etc/temporal/config/config_template.yaml"
+        worker:
+          additionalEnv:
+            - name: TEMPORAL_CONFIG_TEMPLATE
+              value: "/etc/temporal/config/config_template.yaml"
         schema:
           setup:
             enabled: true
