@@ -17,28 +17,20 @@ spec:
           replicaCount: 1
           config:
             persistence:
-              defaultStore: default
-              visibilityStore: visibility
-              default:
-                driver: "sql"
-                cassandra:
-                  hosts: ["cassandra"]
-                  port: 9042
+              defaultStore: sql-store
+              visibilityStore: sql-visibility
+              sql-store:
                 sql:
-                  driver: "postgres12" # Wait! Chart uses pluginName?
+                  driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
                   existingSecret: "aegis-temporal-mvp-default-store"
                   secretKey: "password"
                   database: "temporal"
-              visibility:
-                driver: "sql"
-                cassandra:
-                  hosts: ["cassandra"]
-                  port: 9042
+              sql-visibility:
                 sql:
-                  driver: "postgres12" # Wait! Chart uses pluginName?
+                  driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
