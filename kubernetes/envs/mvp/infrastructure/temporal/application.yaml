@@ -22,19 +22,19 @@ spec:
               datastores:
                 default:
                   sql:
-                    driver: "postgres12"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
-                    database: "temporal"
+                    pluginName: "postgres"
+                    driverName: "postgres"
+                    databaseName: "temporal"
+                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
                     user: "aegis_admin"
                     existingSecret: "aegis-env"
                     existingSecretPasswordKey: "POSTGRES_PASSWORD"
                 visibility:
                   sql:
-                    driver: "postgres12"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
-                    database: "temporal_visibility"
+                    pluginName: "postgres"
+                    driverName: "postgres"
+                    databaseName: "temporal_visibility"
+                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
                     user: "aegis_admin"
                     existingSecret: "aegis-env"
                     existingSecretPasswordKey: "POSTGRES_PASSWORD"
