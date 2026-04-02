@@ -77,12 +77,23 @@ END $$;
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'viewer',
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Migration: Ensure name exists on 'users' if table was created previously
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='users' AND column_name='name' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE users ADD COLUMN name VARCHAR(255);
+    END IF;
+END $$;
 
 -- Handle circular reference between companies and users
 DO $$ BEGIN
