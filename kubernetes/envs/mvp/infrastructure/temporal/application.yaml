@@ -12,16 +12,27 @@ spec:
     chart: temporal
     targetRevision: 0.74.0
     helm:
-      valuesObject:
+      values: |
+        prometheus:
+          enabled: false
+        grafana:
+          enabled: false
+        cassandra:
+          enabled: false
+        postgresql:
+          enabled: false
+        elasticsearch:
+          enabled: false
         server:
           replicaCount: 1
           config:
             persistence:
-              defaultStore: sql-default
-              visibilityStore: sql-visibility
+              defaultStore: default
+              visibilityStore: visibility
               numHistoryShards: 512
               datastores:
-                sql-default:
+                default:
+                  cassandra: null  # Ce null sera désormais respecté par Helm !
                   sql:
                     createDatabase: true
                     manageSchema: true
@@ -36,7 +47,9 @@ spec:
                     maxConns: 20
                     maxIdleConns: 20
                     maxConnLifetime: "1h"
-                sql-visibility:
+                visibility:
+                  cassandra: null      # Ce null sera désormais respecté !
+                  elasticsearch: null  # Pareil ici !
                   sql:
                     createDatabase: true
                     manageSchema: true
@@ -48,16 +61,6 @@ spec:
                     user: aegis_admin
                     existingSecret: aegis-env
                     secretKey: POSTGRES_PASSWORD
-        prometheus:
-          enabled: false
-        grafana:
-          enabled: false
-        cassandra:
-          enabled: false
-        postgresql:
-          enabled: false
-        elasticsearch:
-          enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
