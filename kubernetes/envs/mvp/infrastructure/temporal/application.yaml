@@ -18,7 +18,7 @@ spec:
           config:
             persistence:
               defaultStore: default
-              visibilityStore: visibility
+              visibilityStore: default
               default:
                 sql:
                   driver: "postgres"
@@ -28,15 +28,6 @@ spec:
                   existingSecret: "aegis-env"
                   secretKey: "POSTGRES_PASSWORD"
                   database: "temporal"
-              visibility:
-                sql:
-                  driver: "postgres"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  secretKey: "POSTGRES_PASSWORD"
-                  database: "temporal_visibility"
         schema:
           setup:
             enabled: true
