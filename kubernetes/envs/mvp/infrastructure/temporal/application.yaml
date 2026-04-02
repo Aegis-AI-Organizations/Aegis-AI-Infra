@@ -10,33 +10,47 @@ spec:
   source:
     repoURL: https://temporalio.github.io/helm-charts
     chart: temporal
-    targetRevision: 0.x.x
+    targetRevision: 0.74.0
     helm:
       valuesObject:
         server:
           replicaCount: 1
           config:
             persistence:
-              default:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-pre-alpha-postgresql"
-                  port: 5432
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal"
-              visibility:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-pre-alpha-postgresql"
-                  port: 5432
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal_visibility"
+              defaultStore: default
+              visibilityStore: visibility
+              numHistoryShards: 512
+              datastores:
+                default:
+                  cassandra: null # <-- Explicitly clear default Cassandra config
+                  sql:
+                    createDatabase: true
+                    manageSchema: true
+                    pluginName: postgres12
+                    driverName: postgres12
+                    databaseName: temporal
+                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
+                    connectProtocol: tcp
+                    user: aegis_admin
+                    existingSecret: aegis-env
+                    secretKey: POSTGRES_PASSWORD
+                    maxConns: 20
+                    maxIdleConns: 20
+                    maxConnLifetime: "1h"
+                visibility:
+                  cassandra: null     # <-- Explicitly clear default Cassandra config
+                  elasticsearch: null # <-- Explicitly clear default Elasticsearch config
+                  sql:
+                    createDatabase: true
+                    manageSchema: true
+                    pluginName: postgres12
+                    driverName: postgres12
+                    databaseName: temporal_visibility
+                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
+                    connectProtocol: tcp
+                    user: aegis_admin
+                    existingSecret: aegis-env
+                    secretKey: POSTGRES_PASSWORD
         prometheus:
           enabled: false
         grafana:
@@ -46,8 +60,7 @@ spec:
         postgresql:
           enabled: false
         elasticsearch:
-          replicas: 1
-          minimumMasterNodes: 1
+          enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
