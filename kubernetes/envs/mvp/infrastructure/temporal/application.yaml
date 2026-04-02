@@ -19,32 +19,25 @@ spec:
             persistence:
               defaultStore: default
               visibilityStore: visibility
-              default:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  database: "temporal"
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  secretKey: "POSTGRES_PASSWORD"
-                  maxConns: 20
-                  maxIdleConns: 20
-                  maxConnLifetime: "1h"
-              visibility:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  database: "temporal_visibility"
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  secretKey: "POSTGRES_PASSWORD"
-                  maxConns: 20
-                  maxIdleConns: 20
-                  maxConnLifetime: "1h"
+              datastores:
+                default:
+                  sql:
+                    driver: "postgres"
+                    host: "aegis-postgres-mvp-postgresql"
+                    port: 5432
+                    database: "temporal"
+                    user: "aegis_admin"
+                    existingSecret: "aegis-env"
+                    secretKey: "POSTGRES_PASSWORD"
+                visibility:
+                  sql:
+                    driver: "postgres"
+                    host: "aegis-postgres-mvp-postgresql"
+                    port: 5432
+                    database: "temporal_visibility"
+                    user: "aegis_admin"
+                    existingSecret: "aegis-env"
+                    secretKey: "POSTGRES_PASSWORD"
         schema:
           setup:
             enabled: true
