@@ -98,10 +98,14 @@ kubectl create namespace aegis-system || true
 if [ -f "$ENV_FILE" ]; then
   echo "🔒 Pushing local .env into Kubernetes Secret 'aegis-env'..."
   # Use dry-run to apply or overwrite the secret idempotently
+  cat "$ENV_FILE" > /tmp/aegis-env-tmp.txt
+  echo "" >> /tmp/aegis-env-tmp.txt
+  echo "password=${POSTGRES_PASSWORD}" >> /tmp/aegis-env-tmp.txt
   kubectl create secret generic aegis-env \
-    --from-env-file="$ENV_FILE" \
+    --from-env-file="/tmp/aegis-env-tmp.txt" \
     --namespace aegis-system \
     --dry-run=client -o yaml | kubectl apply -f -
+  rm -f /tmp/aegis-env-tmp.txt
 fi
 
 echo "📥 Installing Ingress Nginx..."

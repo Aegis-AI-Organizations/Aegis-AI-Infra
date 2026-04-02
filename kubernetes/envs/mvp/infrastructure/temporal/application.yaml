@@ -15,33 +15,15 @@ spec:
       valuesObject:
         server:
           replicaCount: 1
+        cassandra:
+          enabled: true
           config:
-            persistence:
-              default:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal"
-              visibility:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal_visibility"
+            cluster_size: 1
+            seed_size: 1
+            num_tokens: 4
         prometheus:
           enabled: false
         grafana:
-          enabled: false
-        cassandra:
           enabled: false
         postgresql:
           enabled: false
