@@ -19,25 +19,24 @@ spec:
             persistence:
               defaultStore: aegis-default
               visibilityStore: aegis-visibility
-              datastores:
-                aegis-default:
-                  sql:
-                    driver: "postgres"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
-                    database: "temporal"
-                    user: "aegis_admin"
-                    existingSecret: "aegis-env"
-                    secretKey: "POSTGRES_PASSWORD"
-                aegis-visibility:
-                  sql:
-                    driver: "postgres"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
-                    database: "temporal_visibility"
-                    user: "aegis_admin"
-                    existingSecret: "aegis-env"
-                    secretKey: "POSTGRES_PASSWORD"
+              aegis-default:
+                sql:
+                  driver: "postgres"
+                  host: "aegis-postgres-mvp-postgresql"
+                  port: 5432
+                  database: "temporal"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
+              aegis-visibility:
+                sql:
+                  driver: "postgres"
+                  host: "aegis-postgres-mvp-postgresql"
+                  port: 5432
+                  database: "temporal_visibility"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
         schema:
           setup:
             enabled: true
