@@ -41,20 +41,28 @@ spec:
                   database: "temporal_visibility"
         frontend:
           additionalEnv:
-            - name: TEMPORAL_CONFIG_FILE
-              value: "/etc/temporal/config/config_template.yaml"
+            - name: CASSANDRA_HOSTS
+              value: "cassandra"
+            - name: CASSANDRA_REPLICATION_FACTOR
+              value: "1"
         history:
           additionalEnv:
-            - name: TEMPORAL_CONFIG_FILE
-              value: "/etc/temporal/config/config_template.yaml"
+            - name: CASSANDRA_HOSTS
+              value: "cassandra"
+            - name: CASSANDRA_REPLICATION_FACTOR
+              value: "1"
         matching:
           additionalEnv:
-            - name: TEMPORAL_CONFIG_FILE
-              value: "/etc/temporal/config/config_template.yaml"
+            - name: CASSANDRA_HOSTS
+              value: "cassandra"
+            - name: CASSANDRA_REPLICATION_FACTOR
+              value: "1"
         worker:
           additionalEnv:
-            - name: TEMPORAL_CONFIG_FILE
-              value: "/etc/temporal/config/config_template.yaml"
+            - name: CASSANDRA_HOSTS
+              value: "cassandra"
+            - name: CASSANDRA_REPLICATION_FACTOR
+              value: "1"
         schema:
           setup:
             enabled: true
