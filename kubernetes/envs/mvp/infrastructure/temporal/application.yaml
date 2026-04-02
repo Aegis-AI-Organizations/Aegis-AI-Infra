@@ -17,9 +17,11 @@ spec:
           replicaCount: 1
           config:
             persistence:
-              defaultStore: aegis-default
-              visibilityStore: aegis-visibility
-              aegis-default:
+              defaultStore: default
+              visibilityStore: visibility
+              default:
+                cassandra:
+                  port: 9042
                 sql:
                   driver: "postgres"
                   host: "aegis-postgres-mvp-postgresql"
@@ -28,7 +30,9 @@ spec:
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
                   secretKey: "POSTGRES_PASSWORD"
-              aegis-visibility:
+              visibility:
+                cassandra:
+                  port: 9042
                 sql:
                   driver: "postgres"
                   host: "aegis-postgres-mvp-postgresql"
