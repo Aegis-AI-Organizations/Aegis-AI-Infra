@@ -21,6 +21,9 @@ spec:
               visibilityStore: visibility
               datastores:
                 default:
+                  cassandra:
+                    hosts:
+                      - "127.0.0.1"
                   sql:
                     driver: "postgres"
                     host: "aegis-postgres-mvp-postgresql"
@@ -30,6 +33,9 @@ spec:
                     existingSecret: "aegis-env"
                     secretKey: "POSTGRES_PASSWORD"
                 visibility:
+                  cassandra:
+                    hosts:
+                      - "127.0.0.1"
                   sql:
                     driver: "postgres"
                     host: "aegis-postgres-mvp-postgresql"
