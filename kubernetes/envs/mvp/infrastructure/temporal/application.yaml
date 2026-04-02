@@ -19,25 +19,26 @@ spec:
             persistence:
               defaultStore: default
               visibilityStore: visibility
+              numHistoryShards: 512
               datastores:
                 default:
                   sql:
-                    driver: "postgres"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
+                    pluginName: "postgres"
+                    databaseName: "temporal"
+                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
+                    connectProtocol: "tcp"
                     user: "aegis_admin"
                     existingSecret: "aegis-env"
                     existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                    database: "temporal"
                 visibility:
                   sql:
-                    driver: "postgres"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
+                    pluginName: "postgres"
+                    databaseName: "temporal_visibility"
+                    connectAddr: "aegis-postgres-mvp-postgresql:5432"
+                    connectProtocol: "tcp"
                     user: "aegis_admin"
                     existingSecret: "aegis-env"
                     existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                    database: "temporal_visibility"
         prometheus:
           enabled: false
         grafana:
