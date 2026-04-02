@@ -8,42 +8,35 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://go.temporal.io/helm-charts
+    repoURL: https://temporalio.github.io/helm-charts
     chart: temporal
-    targetRevision: 0.74.0
+    targetRevision: 0.x.x
     helm:
       valuesObject:
         server:
           replicaCount: 1
           config:
             persistence:
-              defaultStore: default
-              visibilityStore: visibility
               default:
                 driver: "sql"
                 sql:
                   driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
-                  database: "temporal"
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
-                  secretKey: "POSTGRES_PASSWORD"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
+                  database: "temporal"
               visibility:
                 driver: "sql"
                 sql:
                   driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
-                  database: "temporal_visibility"
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
-                  secretKey: "POSTGRES_PASSWORD"
-        schema:
-          setup:
-            enabled: true
-          update:
-            enabled: true
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
+                  database: "temporal_visibility"
         prometheus:
           enabled: false
         grafana:
@@ -53,7 +46,8 @@ spec:
         postgresql:
           enabled: false
         elasticsearch:
-          enabled: false
+          replicas: 1
+          minimumMasterNodes: 1
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
