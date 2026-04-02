@@ -1,0 +1,52 @@
+prometheus:
+  enabled: false
+grafana:
+  enabled: false
+cassandra:
+  enabled: false
+postgresql:
+  enabled: false
+elasticsearch:
+  enabled: false
+
+server:
+  replicaCount: 1
+  config:
+    persistence:
+      defaultStore: default
+      visibilityStore: visibility
+      numHistoryShards: 512
+      datastores:
+        default:
+          cassandra: null
+          sql:
+            createDatabase: true
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal
+            connectAddr: "aegis-postgres-mvp-postgresql:5432"
+            connectProtocol: tcp
+            user: aegis_admin
+            existingSecret: aegis-env
+            secretKey: POSTGRES_PASSWORD
+            maxConns: 20
+            maxIdleConns: 20
+            maxConnLifetime: "1h"
+        visibility:
+          cassandra: null
+          elasticsearch: null
+          sql:
+            createDatabase: true
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal_visibility
+            connectAddr: "aegis-postgres-mvp-postgresql:5432"
+            connectProtocol: tcp
+            user: aegis_admin
+            existingSecret: aegis-env
+            secretKey: POSTGRES_PASSWORD
+            maxConns: 20
+            maxIdleConns: 20
+            maxConnLifetime: "1h"
