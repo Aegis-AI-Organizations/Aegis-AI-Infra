@@ -46,8 +46,7 @@ spec:
         postgresql:
           enabled: false
         elasticsearch:
-          replicas: 1
-          minimumMasterNodes: 1
+          enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
