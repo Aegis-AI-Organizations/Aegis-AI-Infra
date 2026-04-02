@@ -18,25 +18,21 @@ spec:
           config:
             persistence:
               default:
-                driver: "sql"
                 sql:
-                  driver: "postgres"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
+                  pluginName: "postgres12"
+                  databaseName: "temporal"
+                  connectAddr: "aegis-postgres-mvp-postgresql:5432"
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
                   existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal"
               visibility:
-                driver: "sql"
                 sql:
-                  driver: "postgres"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
+                  pluginName: "postgres12"
+                  databaseName: "temporal_visibility"
+                  connectAddr: "aegis-postgres-mvp-postgresql:5432"
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
                   existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal_visibility"
         prometheus:
           enabled: false
         grafana:
