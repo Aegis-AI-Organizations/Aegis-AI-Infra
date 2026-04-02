@@ -18,6 +18,7 @@ spec:
           config:
             persistence:
               default:
+                driver: "sql"
                 sql:
                   driver: "postgres"
                   host: "aegis-postgres-mvp-postgresql"
@@ -27,6 +28,7 @@ spec:
                   existingSecretPasswordKey: "POSTGRES_PASSWORD"
                   database: "temporal"
               visibility:
+                driver: "sql"
                 sql:
                   driver: "postgres"
                   host: "aegis-postgres-mvp-postgresql"
