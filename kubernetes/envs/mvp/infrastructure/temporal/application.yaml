@@ -27,12 +27,15 @@ spec:
           replicaCount: 1
           config:
             persistence:
+              default:
+                driver: "sql"
+              visibility:
+                driver: "sql"
               defaultStore: default
               visibilityStore: visibility
               numHistoryShards: 512
               datastores:
                 default:
-                  cassandra: null  # Ce null sera désormais respecté par Helm !
                   sql:
                     createDatabase: true
                     manageSchema: true
@@ -48,8 +51,6 @@ spec:
                     maxIdleConns: 20
                     maxConnLifetime: "1h"
                 visibility:
-                  cassandra: null      # Ce null sera désormais respecté !
-                  elasticsearch: null  # Pareil ici !
                   sql:
                     createDatabase: true
                     manageSchema: true
