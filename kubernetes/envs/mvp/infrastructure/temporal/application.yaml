@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: aegis-temporal-mvp
+  name: aegis-temporal-pre-alpha
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -10,25 +10,44 @@ spec:
   source:
     repoURL: https://temporalio.github.io/helm-charts
     chart: temporal
-    targetRevision: 0.74.0
+    targetRevision: 0.x.x
     helm:
       valuesObject:
         server:
           replicaCount: 1
-        cassandra:
-          enabled: true
           config:
-            cluster_size: 1
-            seed_size: 1
-            num_tokens: 4
+            persistence:
+              default:
+                driver: "sql"
+                sql:
+                  driver: "postgres12"
+                  host: "aegis-postgres-pre-alpha-postgresql"
+                  port: 5432
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
+                  database: "temporal"
+              visibility:
+                driver: "sql"
+                sql:
+                  driver: "postgres12"
+                  host: "aegis-postgres-pre-alpha-postgresql"
+                  port: 5432
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
+                  database: "temporal_visibility"
         prometheus:
           enabled: false
         grafana:
           enabled: false
+        cassandra:
+          enabled: false
         postgresql:
           enabled: false
         elasticsearch:
-          enabled: false
+          replicas: 1
+          minimumMasterNodes: 1
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
