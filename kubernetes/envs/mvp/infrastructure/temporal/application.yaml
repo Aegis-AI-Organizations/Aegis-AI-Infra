@@ -41,28 +41,36 @@ spec:
                   database: "temporal_visibility"
         frontend:
           additionalEnv:
-            - name: CASSANDRA_HOSTS
-              value: "cassandra"
+            - name: TEMPORAL_CASSANDRA_ADDRESS
+              value: "cassandra:9042"
             - name: CASSANDRA_REPLICATION_FACTOR
               value: "1"
+            - name: DB
+              value: "postgresql"
         history:
           additionalEnv:
-            - name: CASSANDRA_HOSTS
-              value: "cassandra"
+            - name: TEMPORAL_CASSANDRA_ADDRESS
+              value: "cassandra:9042"
             - name: CASSANDRA_REPLICATION_FACTOR
               value: "1"
+            - name: DB
+              value: "postgresql"
         matching:
           additionalEnv:
-            - name: CASSANDRA_HOSTS
-              value: "cassandra"
+            - name: TEMPORAL_CASSANDRA_ADDRESS
+              value: "cassandra:9042"
             - name: CASSANDRA_REPLICATION_FACTOR
               value: "1"
+            - name: DB
+              value: "postgresql"
         worker:
           additionalEnv:
-            - name: CASSANDRA_HOSTS
-              value: "cassandra"
+            - name: TEMPORAL_CASSANDRA_ADDRESS
+              value: "cassandra:9042"
             - name: CASSANDRA_REPLICATION_FACTOR
               value: "1"
+            - name: DB
+              value: "postgresql"
         schema:
           setup:
             enabled: true
