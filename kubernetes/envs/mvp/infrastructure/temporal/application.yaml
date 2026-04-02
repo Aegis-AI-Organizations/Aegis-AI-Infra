@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://temporalio.github.io/helm-charts
     chart: temporal
-    targetRevision: 0.x.x
+    targetRevision: 0.74.0
     helm:
       valuesObject:
         server:
@@ -21,7 +21,7 @@ spec:
               visibilityStore: visibility
               default:
                 sql:
-                  driver: "postgres12"
+                  driver: "postgres12" # Wait! Chart uses pluginName?
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
@@ -30,7 +30,7 @@ spec:
                   database: "temporal"
               visibility:
                 sql:
-                  driver: "postgres12"
+                  driver: "postgres12" # Wait! Chart uses pluginName?
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   user: "aegis_admin"
