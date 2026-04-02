@@ -17,8 +17,6 @@ spec:
           replicaCount: 1
           config:
             persistence:
-              defaultStore: default
-              visibilityStore: visibility
               default:
                 driver: "sql"
                 sql:
@@ -27,7 +25,7 @@ spec:
                   port: 5432
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
-                  secretKey: "POSTGRES_PASSWORD"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
                   database: "temporal"
               visibility:
                 driver: "sql"
@@ -37,7 +35,7 @@ spec:
                   port: 5432
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
-                  secretKey: "POSTGRES_PASSWORD"
+                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
                   database: "temporal_visibility"
         prometheus:
           enabled: false
