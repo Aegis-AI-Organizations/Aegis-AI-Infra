@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://temporalio.github.io/helm-charts
     chart: temporal
-    targetRevision: 0.x.x
+    targetRevision: 0.39.0
     helm:
       valuesObject:
         server:
