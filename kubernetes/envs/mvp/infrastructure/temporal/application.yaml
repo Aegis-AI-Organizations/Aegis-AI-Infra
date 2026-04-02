@@ -27,12 +27,10 @@ spec:
           replicaCount: 1
           config:
             persistence:
-              # --- LE FIX FINAL EST ICI ---
-              # En passant des objets vides, Helm va complètement écraser
-              # la configuration Cassandra par défaut pour la laisser vide.
-              default: {}
-              visibility: {}
-              # -----------------------------
+              default:
+                driver: "sql"
+              visibility:
+                driver: "sql"
 
               defaultStore: default
               visibilityStore: visibility
@@ -54,6 +52,8 @@ spec:
                     maxIdleConns: 20
                     maxConnLifetime: "1h"
                 visibility:
+                  cassandra: null
+                  elasticsearch: null
                   sql:
                     createDatabase: true
                     manageSchema: true
