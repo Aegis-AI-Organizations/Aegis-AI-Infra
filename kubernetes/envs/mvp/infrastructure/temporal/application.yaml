@@ -19,26 +19,30 @@ spec:
             persistence:
               defaultStore: default
               visibilityStore: visibility
-              default:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  database: "temporal"
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
-              visibility:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  database: "temporal_visibility"
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
+              datastores:
+                default:
+                  sql:
+                    driver: "postgres12"
+                    host: "aegis-postgres-mvp-postgresql"
+                    port: 5432
+                    database: "temporal"
+                    user: "aegis_admin"
+                    existingSecret: "aegis-env"
+                    existingSecretPasswordKey: "POSTGRES_PASSWORD"
+                visibility:
+                  sql:
+                    driver: "postgres12"
+                    host: "aegis-postgres-mvp-postgresql"
+                    port: 5432
+                    database: "temporal_visibility"
+                    user: "aegis_admin"
+                    existingSecret: "aegis-env"
+                    existingSecretPasswordKey: "POSTGRES_PASSWORD"
+        schema:
+          setup:
+            enabled: true
+          update:
+            enabled: true
         prometheus:
           enabled: false
         grafana:
@@ -48,8 +52,7 @@ spec:
         postgresql:
           enabled: false
         elasticsearch:
-          replicas: 1
-          minimumMasterNodes: 1
+          enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system
