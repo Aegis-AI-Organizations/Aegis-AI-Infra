@@ -17,27 +17,26 @@ spec:
           replicaCount: 1
           config:
             persistence:
-              defaultStore: aegis-default
-              visibilityStore: aegis-visibility
-              datastores:
-                aegis-default:
-                  sql:
-                    driver: "postgres"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
-                    database: "temporal"
-                    user: "aegis_admin"
-                    existingSecret: "aegis-env"
-                    secretKey: "POSTGRES_PASSWORD"
-                aegis-visibility:
-                  sql:
-                    driver: "postgres"
-                    host: "aegis-postgres-mvp-postgresql"
-                    port: 5432
-                    database: "temporal_visibility"
-                    user: "aegis_admin"
-                    existingSecret: "aegis-env"
-                    secretKey: "POSTGRES_PASSWORD"
+              defaultStore: default
+              visibilityStore: visibility
+              default:
+                sql:
+                  driver: "postgres"
+                  host: "aegis-postgres-mvp-postgresql"
+                  port: 5432
+                  database: "temporal"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
+              visibility:
+                sql:
+                  driver: "postgres"
+                  host: "aegis-postgres-mvp-postgresql"
+                  port: 5432
+                  database: "temporal_visibility"
+                  user: "aegis_admin"
+                  existingSecret: "aegis-env"
+                  secretKey: "POSTGRES_PASSWORD"
         schema:
           setup:
             enabled: true
@@ -49,7 +48,9 @@ spec:
           enabled: false
         cassandra:
           enabled: false
-          port: 9042
+          config:
+            ports:
+              cql: 9042
         postgresql:
           enabled: false
         elasticsearch:
