@@ -15,6 +15,9 @@ spec:
       valuesObject:
         server:
           replicaCount: 1
+          additionalEnv:
+            - name: TEMPORAL_CONFIG_TEMPLATE
+              value: "/etc/temporal/config/config_template.yaml"
           config:
             persistence:
               defaultStore: default
