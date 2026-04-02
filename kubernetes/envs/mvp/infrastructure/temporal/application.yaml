@@ -18,6 +18,7 @@ spec:
           config:
             persistence:
               default:
+                driver: "sql"
                 sql:
                   pluginName: "postgres12"
                   databaseName: "temporal"
@@ -26,6 +27,7 @@ spec:
                   existingSecret: "aegis-env"
                   existingSecretPasswordKey: "POSTGRES_PASSWORD"
               visibility:
+                driver: "sql"
                 sql:
                   pluginName: "postgres12"
                   databaseName: "temporal_visibility"
