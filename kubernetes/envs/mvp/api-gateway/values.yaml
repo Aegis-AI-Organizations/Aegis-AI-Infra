@@ -89,6 +89,21 @@ networkPolicy:
   egress:
     - toEndpoints:
         - matchLabels:
+            app.kubernetes.io/name: postgresql
+            app.kubernetes.io/instance: aegis-postgres-mvp
+      ports:
+        - port: 5432
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: aegis-temporal-mvp
+            app.kubernetes.io/component: frontend
+      ports:
+        - port: 7233
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
             app: brain-mvp
       ports:
         - port: 50051

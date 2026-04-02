@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://go.temporal.io/helm-charts
     chart: temporal
-    targetRevision: 0.x.x
+    targetRevision: 0.74.0
     helm:
       valuesObject:
         server:
@@ -20,25 +20,31 @@ spec:
               defaultStore: default
               visibilityStore: visibility
               default:
-                cassandra: null
+                driver: "sql"
                 sql:
-                  driver: "postgres"
+                  driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   database: "temporal"
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
                   secretKey: "POSTGRES_PASSWORD"
+                  maxConns: 20
+                  maxIdleConns: 20
+                  maxConnLifetime: "1h"
               visibility:
-                cassandra: null
+                driver: "sql"
                 sql:
-                  driver: "postgres"
+                  driver: "postgres12"
                   host: "aegis-postgres-mvp-postgresql"
                   port: 5432
                   database: "temporal_visibility"
                   user: "aegis_admin"
                   existingSecret: "aegis-env"
                   secretKey: "POSTGRES_PASSWORD"
+                  maxConns: 20
+                  maxIdleConns: 20
+                  maxConnLifetime: "1h"
         schema:
           setup:
             enabled: true
@@ -49,11 +55,7 @@ spec:
         grafana:
           enabled: false
         cassandra:
-          enabled: true
-          replicaCount: 0
-          config:
-            ports:
-              cql: 9042
+          enabled: false
         postgresql:
           enabled: false
         elasticsearch:
