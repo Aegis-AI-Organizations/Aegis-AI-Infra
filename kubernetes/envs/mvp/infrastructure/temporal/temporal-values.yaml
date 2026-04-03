@@ -13,6 +13,18 @@ elasticsearch:
 
 server:
   replicaCount: 1
+  # Attente de Postgres avant de démarrer Temporal
+  additionalInitContainers:
+    - name: wait-for-postgres
+      image: postgres:16-alpine
+      command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h aegis-postgres-mvp-postgresql -p 5432 -U aegis_admin; do
+            echo "Waiting for postgres..."
+            sleep 2
+          done
   # Variables "Magiques" Temporal + Redirection Dynamic Config
   additionalEnv:
     - name: DB
