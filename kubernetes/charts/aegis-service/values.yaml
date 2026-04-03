@@ -56,3 +56,15 @@ networkPolicy:
   allowDNS: true
   ingress: []
   egress: []
+
+keda:
+  enabled: false
+  minReplicaCount: 0
+  maxReplicaCount: 10
+  pollingInterval: 15
+  cooldownPeriod: 300
+  triggers: []
+  triggerAuthentication:
+    enabled: false
+    name: ""
+    spec: {}

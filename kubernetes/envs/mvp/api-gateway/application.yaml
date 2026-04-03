@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
-    targetRevision: main
+    targetRevision: feat/keda-autoscaling
     path: kubernetes/charts/aegis-service
     helm:
       valueFiles:
