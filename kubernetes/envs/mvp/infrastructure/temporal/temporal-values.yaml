@@ -13,6 +13,9 @@ elasticsearch:
 
 server:
   replicaCount: 1
+  setConfigFilePath: true
+  configMapsToMount:
+    - "dockerize"
   config:
     persistence:
       numHistoryShards: 512
