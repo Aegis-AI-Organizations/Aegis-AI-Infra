@@ -13,25 +13,23 @@ elasticsearch:
 
 server:
   replicaCount: 1
-  # Injection MULTI-SERVICES pour forcer l'activation de Postgres
-  frontend:
-    additionalEnv: &sql_env
-      - name: TEMPORAL_CONFIG_DIR
-        value: "/etc/temporal/config"
-      - name: DB
-        value: "postgresql"
-      - name: SQL_PLUGIN
-        value: "postgres12"
-      - name: SQL_HOST
-        value: "aegis-postgres-mvp-postgresql"
-      - name: SQL_PORT
-        value: "5432"
-  history:
-    additionalEnv: *sql_env
-  matching:
-    additionalEnv: *sql_env
-  worker:
-    additionalEnv: *sql_env
+  # Utilisation des variables natives de l'image Docker Temporal ("Magic vars")
+  additionalEnv:
+    - name: DB
+      value: "postgres12"
+    - name: POSTGRES_SEEDS
+      value: "aegis-postgres-mvp-postgresql"
+    - name: POSTGRES_USER
+      value: "aegis_admin"
+    - name: POSTGRES_PWD
+      valueFrom:
+        secretKeyRef:
+          name: aegis-env
+          key: POSTGRES_PASSWORD
+    - name: DBNAME
+      value: "aegis_persistence"
+    - name: VISIBILITY_DBNAME
+      value: "aegis_visibility"
   config:
     persistence:
       numHistoryShards: 512
