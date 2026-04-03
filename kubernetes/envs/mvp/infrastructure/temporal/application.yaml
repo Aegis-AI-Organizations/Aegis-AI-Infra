@@ -7,47 +7,16 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
-  source:
-    repoURL: https://temporalio.github.io/helm-charts
-    chart: temporal
-    targetRevision: 0.x.x
-    helm:
-      valuesObject:
-        server:
-          replicaCount: 1
-          config:
-            persistence:
-              default:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal"
-              visibility:
-                driver: "sql"
-                sql:
-                  driver: "postgres12"
-                  host: "aegis-postgres-mvp-postgresql"
-                  port: 5432
-                  user: "aegis_admin"
-                  existingSecret: "aegis-env"
-                  existingSecretPasswordKey: "POSTGRES_PASSWORD"
-                  database: "temporal_visibility"
-        prometheus:
-          enabled: false
-        grafana:
-          enabled: false
-        cassandra:
-          enabled: false
-        postgresql:
-          enabled: false
-        elasticsearch:
-          replicas: 1
-          minimumMasterNodes: 1
+  sources:
+    - repoURL: https://temporalio.github.io/helm-charts
+      chart: temporal
+      targetRevision: 0.74.0
+      helm:
+        valueFiles:
+          - $values/kubernetes/envs/mvp/infrastructure/temporal/temporal-values.yaml
+    - repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+      targetRevision: feat/keda-autoscaling
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system

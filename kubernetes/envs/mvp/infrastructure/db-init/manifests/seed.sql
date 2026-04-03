@@ -9,9 +9,10 @@ WITH upsert_company AS (
     is_active = EXCLUDED.is_active
   RETURNING id
 ), upsert_user AS (
-  INSERT INTO users (company_id, email, password_hash, role, is_active)
+  INSERT INTO users (company_id, name, email, password_hash, role, is_active)
   VALUES (
     (SELECT id FROM upsert_company),
+    INITCAP(split_part(:'AEGIS_SEED_USER_EMAIL', '@', 1)),
     :'AEGIS_SEED_USER_EMAIL',
     crypt(:'AEGIS_SEED_USER_PASSWORD', gen_salt('bf', 10)),
     'superadmin',
@@ -23,6 +24,7 @@ WITH upsert_company AS (
         THEN users.password_hash
       ELSE crypt(:'AEGIS_SEED_USER_PASSWORD', gen_salt('bf', 10))
     END,
+    name = EXCLUDED.name,
     role = EXCLUDED.role,
     is_active = EXCLUDED.is_active,
     company_id = EXCLUDED.company_id

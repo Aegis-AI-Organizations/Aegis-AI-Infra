@@ -60,6 +60,24 @@ env:
       secretKeyRef:
         name: aegis-env
         key: ALLOWED_ORIGINS
+  - name: TEMPORAL_TLS_ENABLE
+    value: "true"
+  - name: TEMPORAL_TLS_CA_PATH
+    value: "/etc/temporal/config/tls/ca.crt"
+  - name: TEMPORAL_TLS_CERT_PATH
+    value: "/etc/temporal/config/tls/tls.crt"
+  - name: TEMPORAL_TLS_KEY_PATH
+    value: "/etc/temporal/config/tls/tls.key"
+
+volumeMounts:
+  - name: temporal-tls
+    mountPath: /etc/temporal/config/tls
+    readOnly: true
+
+volumes:
+  - name: temporal-tls
+    secret:
+      secretName: temporal-client-tls
 
 resources:
   limits:
@@ -87,6 +105,21 @@ networkPolicy:
         - port: 8080
           protocol: TCP
   egress:
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: postgresql
+            app.kubernetes.io/instance: aegis-postgres-mvp
+      ports:
+        - port: 5432
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: aegis-temporal-mvp
+            app.kubernetes.io/component: frontend
+      ports:
+        - port: 7233
+          protocol: TCP
     - toEndpoints:
         - matchLabels:
             app: brain-mvp

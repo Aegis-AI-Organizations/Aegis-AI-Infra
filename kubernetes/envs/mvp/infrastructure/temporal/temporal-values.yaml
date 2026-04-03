@@ -1,0 +1,127 @@
+prometheus:
+  enabled: false
+grafana:
+  enabled: false
+cassandra:
+  enabled: false
+mysql:
+  enabled: false
+postgresql:
+  enabled: false
+elasticsearch:
+  enabled: false
+
+server:
+  replicaCount: 1
+  # Attente de Postgres avant de démarrer Temporal
+  additionalInitContainers:
+    - name: wait-for-postgres
+      image: postgres:16-alpine
+      command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h aegis-postgres-mvp-postgresql -p 5432 -U aegis_admin; do
+            echo "Waiting for postgres..."
+            sleep 2
+          done
+  # Variables "Magiques" Temporal + Redirection Dynamic Config
+  additionalEnv:
+    - name: DB
+      value: "postgres12"
+    - name: POSTGRES_SEEDS
+      value: "aegis-postgres-mvp-postgresql"
+    - name: POSTGRES_USER
+      value: "aegis_admin"
+    - name: POSTGRES_PWD
+      valueFrom:
+        secretKeyRef:
+          name: aegis-env
+          key: POSTGRES_PASSWORD
+    - name: DBNAME
+      value: "aegis_persistence"
+    - name: VISIBILITY_DBNAME
+      value: "aegis_visibility"
+    - name: DYNAMIC_CONFIG_FILE_PATH
+      value: "/etc/temporal/dynamic_config/dynamic_config.yaml"
+    - name: BIND_ON_IP
+      value: "0.0.0.0"
+  config:
+    persistence:
+      numHistoryShards: 512
+      defaultStore: default
+      visibilityStore: visibility
+      default:
+        driver: "sql"
+        sql:
+          driver: "postgres12"
+          host: "aegis-postgres-mvp-postgresql"
+          port: 5432
+          database: "aegis_persistence"
+          user: "aegis_admin"
+          existingSecret: "aegis-env"
+          secretKey: "POSTGRES_PASSWORD"
+          maxConns: 20
+          maxIdleConns: 20
+          maxConnLifetime: "1h"
+      visibility:
+        driver: "sql"
+        sql:
+          driver: "postgres12"
+          host: "aegis-postgres-mvp-postgresql"
+          port: 5432
+          database: "aegis_visibility"
+          user: "aegis_admin"
+          existingSecret: "aegis-env"
+          secretKey: "POSTGRES_PASSWORD"
+          maxConns: 20
+          maxIdleConns: 20
+          maxConnLifetime: "1h"
+    tls:
+      internode:
+        server:
+          certFile: /etc/temporal/config/tls/tls.crt
+          keyFile: /etc/temporal/config/tls/tls.key
+          caFile: /etc/temporal/config/tls/ca.crt
+          requireClientAuth: true
+        client:
+          serverName: aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local
+          rootCaFiles:
+            - /etc/temporal/config/tls/ca.crt
+      frontend:
+        server:
+          certFile: /etc/temporal/config/tls/tls.crt
+          keyFile: /etc/temporal/config/tls/tls.key
+          caFile: /etc/temporal/config/tls/ca.crt
+          requireClientAuth: true
+        client:
+          serverName: aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local
+          rootCaFiles:
+            - /etc/temporal/config/tls/ca.crt
+  additionalVolumes:
+    - name: tls
+      secret:
+        secretName: temporal-server-tls
+  additionalVolumeMounts:
+    - name: tls
+      mountPath: /etc/temporal/config/tls
+
+admintools:
+  additionalEnv:
+    - name: TEMPORAL_CLI_ADDRESS
+      value: "aegis-temporal-mvp-frontend:7233"
+    - name: TEMPORAL_CLI_TLS_CA
+      value: /etc/temporal/config/tls/ca.crt
+    - name: TEMPORAL_CLI_TLS_CERT
+      value: /etc/temporal/config/tls/tls.crt
+    - name: TEMPORAL_CLI_TLS_KEY
+      value: /etc/temporal/config/tls/tls.key
+    - name: TEMPORAL_CLI_TLS_ENABLE_HOST_VERIFICATION
+      value: "false"
+  additionalVolumes:
+    - name: tls
+      secret:
+        secretName: temporal-client-tls
+  additionalVolumeMounts:
+    - name: tls
+      mountPath: /etc/temporal/config/tls

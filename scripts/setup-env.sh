@@ -14,9 +14,11 @@ if [ -f "$ENV_FILE" ]; then
         POSTGRES_DB
         POSTGRES_USER
         POSTGRES_PASSWORD
-        password
         AEGIS_SEED_USER_EMAIL
         AEGIS_SEED_USER_PASSWORD
+        TEMPORAL_NAMESPACE
+        JWT_SECRET
+        ALLOWED_ORIGINS
     )
 
     missing_vars=()
@@ -91,15 +93,27 @@ done
 kubectl create namespace ingress-nginx || true
 kubectl create namespace argocd || true
 kubectl create namespace aegis-system || true
+kubectl create namespace keda || true
 
 # Inject the local .env securely into the Kubernetes cluster
 if [ -f "$ENV_FILE" ]; then
   echo "🔒 Pushing local .env into Kubernetes Secret 'aegis-env'..."
   # Use dry-run to apply or overwrite the secret idempotently
+  cat "$ENV_FILE" > /tmp/aegis-env-tmp.txt
+  echo "" >> /tmp/aegis-env-tmp.txt
+  echo "password=${POSTGRES_PASSWORD}" >> /tmp/aegis-env-tmp.txt
   kubectl create secret generic aegis-env \
-    --from-env-file="$ENV_FILE" \
+    --from-env-file="/tmp/aegis-env-tmp.txt" \
     --namespace aegis-system \
     --dry-run=client -o yaml | kubectl apply -f -
+  rm -f /tmp/aegis-env-tmp.txt
+fi
+
+# Generate mTLS Certificates for Temporal and KEDA
+if [ -f "scripts/generate-temporal-certs.sh" ]; then
+    ./scripts/generate-temporal-certs.sh
+elif [ -f "generate-temporal-certs.sh" ]; then
+    ./generate-temporal-certs.sh
 fi
 
 echo "📥 Installing Ingress Nginx..."
@@ -154,7 +168,7 @@ sleep 5 # Extra buffer for internal services
 echo "⏳ Waiting for Temporal Cluster to be healthy..."
 timeout=300
 elapsed=0
-while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator cluster health 2>/dev/null | grep -q "SERVING"; do
+while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator cluster health --address aegis-temporal-$ENV-frontend:7233 2>/dev/null | grep -q "SERVING"; do
     if [ $elapsed -ge $timeout ]; then
         echo "❌ Timeout waiting for Temporal Cluster to become healthy."
         exit 1
@@ -164,16 +178,16 @@ while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -
 done
 
 # Check if namespace already exists, otherwise create it
-echo "⚙️ Ensuring 'default' Temporal namespace exists..."
+echo "⚙️ Ensuring '${TEMPORAL_NAMESPACE}' Temporal namespace exists..."
 timeout=120
 elapsed=0
-while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe -n default >/dev/null 2>&1; do
+while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe --address aegis-temporal-$ENV-frontend:7233 -n ${TEMPORAL_NAMESPACE} >/dev/null 2>&1; do
     if [ $elapsed -ge $timeout ]; then
         echo "❌ Timeout creating Temporal namespace."
         exit 1
     fi
-    echo "⚙️ Creating 'default' Temporal namespace..."
-    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n default --retention 24h --description "Default namespace for Aegis" >/dev/null 2>&1 || true
+    echo "⚙️ Creating '${TEMPORAL_NAMESPACE}' Temporal namespace..."
+    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create --address aegis-temporal-$ENV-frontend:7233 -n ${TEMPORAL_NAMESPACE} --retention 24h --description "Default namespace for Aegis" >/dev/null 2>&1 || true
     sleep 5
     elapsed=$((elapsed + 5))
 done

@@ -76,3 +76,11 @@ spec:
             failureThreshold: {{ .Values.probes.startup.failureThreshold | default 30 }}
           {{- end }}
           {{- end }}
+          {{- if .Values.volumeMounts }}
+          volumeMounts:
+{{ toYaml .Values.volumeMounts | indent 12 }}
+          {{- end }}
+      {{- if .Values.volumes }}
+      volumes:
+{{ toYaml .Values.volumes | indent 8 }}
+      {{- end }}

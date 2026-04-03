@@ -1,0 +1,11 @@
+{{- if and .Values.keda.enabled .Values.keda.triggerAuthentication.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ .Values.keda.triggerAuthentication.name | default (printf "%s-auth" (.Values.nameOverride | default .Release.Name)) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+{{- if .Values.keda.triggerAuthentication.spec }}
+{{ toYaml .Values.keda.triggerAuthentication.spec | indent 2 }}
+{{- end }}
+{{- end }}

@@ -11,6 +11,8 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
+            app: api-gateway-mvp
+        - matchLabels:
             app: brain-mvp
         - matchLabels:
             app.kubernetes.io/name: temporal
