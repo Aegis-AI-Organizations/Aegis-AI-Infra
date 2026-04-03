@@ -18,11 +18,10 @@ server:
       numHistoryShards: 512
       datastores:
         default:
-          cassandra: null
           sql:
             createDatabase: true
             manageSchema: true
-            pluginName: "postgres12"
+            pluginName: "postgres"
             driverName: "postgres"
             databaseName: "aegis_persistence"
             connectAddr: "aegis-postgres-mvp-postgresql:5432"
@@ -34,12 +33,11 @@ server:
             maxIdleConns: 20
             maxConnLifetime: "1h"
         visibility:
-          cassandra: null
           elasticsearch: null
           sql:
             createDatabase: true
             manageSchema: true
-            pluginName: "postgres12"
+            pluginName: "postgres"
             driverName: "postgres"
             databaseName: "aegis_visibility"
             connectAddr: "aegis-postgres-mvp-postgresql:5432"
