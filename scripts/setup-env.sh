@@ -93,6 +93,7 @@ done
 kubectl create namespace ingress-nginx || true
 kubectl create namespace argocd || true
 kubectl create namespace aegis-system || true
+kubectl create namespace keda || true
 
 # Inject the local .env securely into the Kubernetes cluster
 if [ -f "$ENV_FILE" ]; then
@@ -106,6 +107,13 @@ if [ -f "$ENV_FILE" ]; then
     --namespace aegis-system \
     --dry-run=client -o yaml | kubectl apply -f -
   rm -f /tmp/aegis-env-tmp.txt
+fi
+
+# Generate mTLS Certificates for Temporal and KEDA
+if [ -f "scripts/generate-temporal-certs.sh" ]; then
+    ./scripts/generate-temporal-certs.sh
+elif [ -f "generate-temporal-certs.sh" ]; then
+    ./generate-temporal-certs.sh
 fi
 
 echo "📥 Installing Ingress Nginx..."
