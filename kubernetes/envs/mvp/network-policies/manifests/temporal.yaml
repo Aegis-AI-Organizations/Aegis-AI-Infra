@@ -16,6 +16,8 @@ spec:
             app: brain-mvp
         - matchLabels:
             app: pentest-worker-mvp
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": keda
       toPorts:
         - ports:
             - port: "7233"
