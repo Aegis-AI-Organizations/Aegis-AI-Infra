@@ -111,9 +111,9 @@ fi
 
 # Generate mTLS Certificates for Temporal and KEDA
 if [ -f "scripts/generate-temporal-certs.sh" ]; then
-    ./scripts/generate-temporal-certs.sh
+    ./scripts/generate-temporal-certs.sh "$ENV"
 elif [ -f "generate-temporal-certs.sh" ]; then
-    ./generate-temporal-certs.sh
+    ./generate-temporal-certs.sh "$ENV"
 fi
 
 echo "📥 Installing Ingress Nginx..."

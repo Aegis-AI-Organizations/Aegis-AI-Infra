@@ -109,7 +109,7 @@ server:
 admintools:
   additionalEnv:
     - name: TEMPORAL_CLI_ADDRESS
-      value: "aegis-temporal-mvp-frontend:7233"
+      value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
     - name: TEMPORAL_CLI_TLS_CA
       value: /etc/temporal/config/tls/ca.crt
     - name: TEMPORAL_CLI_TLS_CERT
@@ -117,7 +117,7 @@ admintools:
     - name: TEMPORAL_CLI_TLS_KEY
       value: /etc/temporal/config/tls/tls.key
     - name: TEMPORAL_CLI_TLS_ENABLE_HOST_VERIFICATION
-      value: "false"
+      value: "true"
   additionalVolumes:
     - name: tls
       secret:

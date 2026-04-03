@@ -6,6 +6,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
 {{- if .Values.keda.triggerAuthentication.spec }}
-{{ toYaml .Values.keda.triggerAuthentication.spec | indent 2 }}
+{{ toYaml .Values.keda.triggerAuthentication.spec | nindent 2 }}
 {{- end }}
 {{- end }}
