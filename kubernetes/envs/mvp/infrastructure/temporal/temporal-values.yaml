@@ -50,6 +50,21 @@ server:
     additionalEnv:
       - name: TEMPORAL_CLI_ADDRESS
         value: "aegis-temporal-mvp-frontend:7233"
+      - name: TEMPORAL_CLI_TLS_CA
+        value: /etc/temporal/config/tls/ca.crt
+      - name: TEMPORAL_CLI_TLS_CERT
+        value: /etc/temporal/config/tls/tls.crt
+      - name: TEMPORAL_CLI_TLS_KEY
+        value: /etc/temporal/config/tls/tls.key
+      - name: TEMPORAL_CLI_TLS_ENABLE_HOST_VERIFICATION
+        value: "false"
+    additionalVolumes:
+      - name: tls
+        secret:
+          secretName: temporal-client-tls
+    additionalVolumeMounts:
+      - name: tls
+        mountPath: /etc/temporal/config/tls
   config:
     persistence:
       numHistoryShards: 512
@@ -81,3 +96,23 @@ server:
           maxConns: 20
           maxIdleConns: 20
           maxConnLifetime: "1h"
+    tls:
+      internode:
+        server:
+          certFile: /etc/temporal/config/tls/tls.crt
+          keyFile: /etc/temporal/config/tls/tls.key
+          caFile: /etc/temporal/config/tls/ca.crt
+          requireClientAuth: true
+      frontend:
+        server:
+          certFile: /etc/temporal/config/tls/tls.crt
+          keyFile: /etc/temporal/config/tls/tls.key
+          caFile: /etc/temporal/config/tls/ca.crt
+          requireClientAuth: true
+  additionalVolumes:
+    - name: tls
+      secret:
+        secretName: temporal-server-tls
+  additionalVolumeMounts:
+    - name: tls
+      mountPath: /etc/temporal/config/tls
