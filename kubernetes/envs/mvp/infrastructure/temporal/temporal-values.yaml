@@ -84,12 +84,20 @@ server:
           keyFile: /etc/temporal/config/tls/tls.key
           caFile: /etc/temporal/config/tls/ca.crt
           requireClientAuth: true
+        client:
+          serverName: aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local
+          rootCaFiles:
+            - /etc/temporal/config/tls/ca.crt
       frontend:
         server:
           certFile: /etc/temporal/config/tls/tls.crt
           keyFile: /etc/temporal/config/tls/tls.key
           caFile: /etc/temporal/config/tls/ca.crt
           requireClientAuth: true
+        client:
+          serverName: aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local
+          rootCaFiles:
+            - /etc/temporal/config/tls/ca.crt
   additionalVolumes:
     - name: tls
       secret:
