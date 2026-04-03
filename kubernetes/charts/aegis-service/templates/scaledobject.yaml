@@ -1,0 +1,20 @@
+{{- if .Values.keda.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ .Values.nameOverride | default .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.nameOverride | default .Release.Name }}
+spec:
+  scaleTargetRef:
+    name: {{ .Values.nameOverride | default .Release.Name }}
+  minReplicaCount: {{ .Values.keda.minReplicaCount | default 0 }}
+  maxReplicaCount: {{ .Values.keda.maxReplicaCount | default 10 }}
+  pollingInterval: {{ .Values.keda.pollingInterval | default 15 }}
+  cooldownPeriod: {{ .Values.keda.cooldownPeriod | default 300 }}
+  triggers:
+{{- if .Values.keda.triggers }}
+{{ toYaml .Values.keda.triggers | indent 4 }}
+{{- end }}
+{{- end }}
