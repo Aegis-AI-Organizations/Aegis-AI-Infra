@@ -13,12 +13,12 @@ server:
   replicaCount: 1
   config:
     persistence:
-      # On définit quelles clés dans 'datastores' utiliser
-      defaultStore: persistence
+      defaultStore: default
       visibilityStore: visibility
       numHistoryShards: 512
       datastores:
-        persistence:
+        default:
+          cassandra: null
           sql:
             createDatabase: true
             manageSchema: true
@@ -34,6 +34,8 @@ server:
             maxIdleConns: 20
             maxConnLifetime: "1h"
         visibility:
+          cassandra: null
+          elasticsearch: null
           sql:
             createDatabase: true
             manageSchema: true
