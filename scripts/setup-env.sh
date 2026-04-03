@@ -170,16 +170,16 @@ while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -
 done
 
 # Check if namespace already exists, otherwise create it
-echo "⚙️ Ensuring 'default' Temporal namespace exists..."
+echo "⚙️ Ensuring '${TEMPORAL_NAMESPACE}' Temporal namespace exists..."
 timeout=120
 elapsed=0
-while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe -n default >/dev/null 2>&1; do
+while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace describe -n ${TEMPORAL_NAMESPACE} >/dev/null 2>&1; do
     if [ $elapsed -ge $timeout ]; then
         echo "❌ Timeout creating Temporal namespace."
         exit 1
     fi
-    echo "⚙️ Creating 'default' Temporal namespace..."
-    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n default --retention 24h --description "Default namespace for Aegis" >/dev/null 2>&1 || true
+    echo "⚙️ Creating '${TEMPORAL_NAMESPACE}' Temporal namespace..."
+    kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -- temporal operator namespace create -n ${TEMPORAL_NAMESPACE} --retention 24h --description "Default namespace for Aegis" >/dev/null 2>&1 || true
     sleep 5
     elapsed=$((elapsed + 5))
 done

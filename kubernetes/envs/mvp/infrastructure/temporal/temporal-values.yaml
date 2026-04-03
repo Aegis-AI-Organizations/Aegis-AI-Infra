@@ -24,7 +24,7 @@ server:
             manageSchema: true
             pluginName: postgres12
             driverName: postgres12
-            databaseName: aegis_temporal
+            databaseName: aegis_persistence
             connectAddr: "aegis-postgres-mvp-postgresql:5432"
             connectProtocol: tcp
             user: aegis_admin
