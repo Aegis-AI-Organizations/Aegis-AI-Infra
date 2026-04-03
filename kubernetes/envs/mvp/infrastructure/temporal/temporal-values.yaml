@@ -13,23 +13,18 @@ server:
   replicaCount: 1
   config:
     persistence:
-      default:
-        driver: "sql"
-      visibility:
-        driver: "sql"
-
-      defaultStore: default
+      # On définit quelles clés dans 'datastores' utiliser
+      defaultStore: persistence
       visibilityStore: visibility
       numHistoryShards: 512
       datastores:
-        default:
-          cassandra: null
+        persistence:
           sql:
             createDatabase: true
             manageSchema: true
             pluginName: postgres12
             driverName: postgres12
-            databaseName: temporal
+            databaseName: aegis_temporal
             connectAddr: "aegis-postgres-mvp-postgresql:5432"
             connectProtocol: tcp
             user: aegis_admin
@@ -39,16 +34,17 @@ server:
             maxIdleConns: 20
             maxConnLifetime: "1h"
         visibility:
-          cassandra: null
-          elasticsearch: null
           sql:
             createDatabase: true
             manageSchema: true
             pluginName: postgres12
             driverName: postgres12
-            databaseName: temporal_visibility
+            databaseName: aegis_visibility
             connectAddr: "aegis-postgres-mvp-postgresql:5432"
             connectProtocol: tcp
             user: aegis_admin
             existingSecret: aegis-env
             secretKey: POSTGRES_PASSWORD
+            maxConns: 20
+            maxIdleConns: 20
+            maxConnLifetime: "1h"
