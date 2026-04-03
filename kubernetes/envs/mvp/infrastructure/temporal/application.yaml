@@ -5,6 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
+    # Force sync trigger: 2026-04-03-11-13
 spec:
   project: default
   sources:
