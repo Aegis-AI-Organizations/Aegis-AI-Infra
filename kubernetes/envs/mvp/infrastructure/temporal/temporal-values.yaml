@@ -44,6 +44,12 @@ server:
       value: "aegis_visibility"
     - name: DYNAMIC_CONFIG_FILE_PATH
       value: "/etc/temporal/dynamic_config/dynamic_config.yaml"
+    - name: BIND_ON_IP
+      value: "0.0.0.0"
+  admintools:
+    additionalEnv:
+      - name: TEMPORAL_CLI_ADDRESS
+        value: "aegis-temporal-mvp-frontend:7233"
   config:
     persistence:
       numHistoryShards: 512
