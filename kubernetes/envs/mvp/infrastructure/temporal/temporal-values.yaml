@@ -4,6 +4,8 @@ grafana:
   enabled: false
 cassandra:
   enabled: false
+mysql:
+  enabled: false
 postgresql:
   enabled: false
 elasticsearch:
@@ -13,7 +15,6 @@ server:
   replicaCount: 1
   config:
     persistence:
-      numHistoryShards: 512
       defaultStore: default
       visibilityStore: visibility
       default:
@@ -25,8 +26,8 @@ server:
           port: 5432
           database: "aegis_persistence"
           user: "aegis_admin"
-          passwordSecretName: "aegis-env"
-          passwordSecretKey: "POSTGRES_PASSWORD"
+          existingSecret: "aegis-env"
+          secretKey: "POSTGRES_PASSWORD"
           maxConns: 20
           maxIdleConns: 20
           maxConnLifetime: "1h"
@@ -39,8 +40,8 @@ server:
           port: 5432
           database: "aegis_visibility"
           user: "aegis_admin"
-          passwordSecretName: "aegis-env"
-          passwordSecretKey: "POSTGRES_PASSWORD"
+          existingSecret: "aegis-env"
+          secretKey: "POSTGRES_PASSWORD"
           maxConns: 20
           maxIdleConns: 20
           maxConnLifetime: "1h"
