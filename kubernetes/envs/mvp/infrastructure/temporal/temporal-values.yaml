@@ -22,14 +22,14 @@ server:
           sql:
             createDatabase: true
             manageSchema: true
-            pluginName: postgres12
-            driverName: postgres12
-            databaseName: aegis_persistence
+            pluginName: "postgres12"
+            driverName: "postgres"
+            databaseName: "aegis_persistence"
             connectAddr: "aegis-postgres-mvp-postgresql:5432"
-            connectProtocol: tcp
-            user: aegis_admin
-            existingSecret: aegis-env
-            secretKey: POSTGRES_PASSWORD
+            connectProtocol: "tcp"
+            user: "aegis_admin"
+            existingSecret: "aegis-env"
+            secretKey: "POSTGRES_PASSWORD"
             maxConns: 20
             maxIdleConns: 20
             maxConnLifetime: "1h"
@@ -39,14 +39,14 @@ server:
           sql:
             createDatabase: true
             manageSchema: true
-            pluginName: postgres12
-            driverName: postgres12
-            databaseName: aegis_visibility
+            pluginName: "postgres12"
+            driverName: "postgres"
+            databaseName: "aegis_visibility"
             connectAddr: "aegis-postgres-mvp-postgresql:5432"
-            connectProtocol: tcp
-            user: aegis_admin
-            existingSecret: aegis-env
-            secretKey: POSTGRES_PASSWORD
+            connectProtocol: "tcp"
+            user: "aegis_admin"
+            existingSecret: "aegis-env"
+            secretKey: "POSTGRES_PASSWORD"
             maxConns: 20
             maxIdleConns: 20
             maxConnLifetime: "1h"
