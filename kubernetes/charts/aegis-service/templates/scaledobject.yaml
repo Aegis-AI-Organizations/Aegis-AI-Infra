@@ -15,6 +15,6 @@ spec:
   cooldownPeriod: {{ .Values.keda.cooldownPeriod | default 300 }}
   triggers:
 {{- if .Values.keda.triggers }}
-{{ toYaml .Values.keda.triggers | indent 4 }}
+{{ toYaml .Values.keda.triggers | nindent 4 }}
 {{- end }}
 {{- end }}

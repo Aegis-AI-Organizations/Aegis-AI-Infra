@@ -2,10 +2,10 @@
 set -e
 
 # Configuration
-CERT_DIR="./certificates/temporal"
+ENV="${1:-mvp}"
+CERT_DIR="./certificates/temporal/$ENV"
 mkdir -p "$CERT_DIR"
 NAMESPACE="aegis-system"
-ENV="mvp"
 FRONTEND_SVC="aegis-temporal-$ENV-frontend"
 FULL_HOST="$FRONTEND_SVC.$NAMESPACE.svc.cluster.local"
 
