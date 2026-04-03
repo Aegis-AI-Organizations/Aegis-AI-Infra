@@ -19,6 +19,24 @@ spec:
           name: keda-operator
         rbac:
           create: true
+        operator:
+          volumes:
+            - name: temporal-certs
+              secret:
+                secretName: temporal-client-tls
+          volumeMounts:
+            - name: temporal-certs
+              mountPath: /etc/keda/certs
+              readOnly: true
+        metricsServer:
+          volumes:
+            - name: temporal-certs
+              secret:
+                secretName: temporal-client-tls
+          volumeMounts:
+            - name: temporal-certs
+              mountPath: /etc/keda/certs
+              readOnly: true
   destination:
     server: https://kubernetes.default.svc
     namespace: keda
