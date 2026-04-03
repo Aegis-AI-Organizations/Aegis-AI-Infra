@@ -13,9 +13,11 @@ elasticsearch:
 
 server:
   replicaCount: 1
-  setConfigFilePath: true
-  configMapsToMount:
-    - "dockerize"
+  additionalEnv:
+    - name: TEMPORAL_CONFIG_DIR
+      value: "/etc/temporal/config"
+    - name: DB
+      value: "postgresql"
   config:
     persistence:
       numHistoryShards: 512
