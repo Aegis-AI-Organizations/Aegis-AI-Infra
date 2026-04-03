@@ -15,13 +15,13 @@ server:
   replicaCount: 1
   config:
     persistence:
+      numHistoryShards: 512
       defaultStore: default
       visibilityStore: visibility
       default:
         driver: "sql"
         sql:
-          pluginName: "postgres"
-          driverName: "postgres"
+          driver: "postgres"
           host: "aegis-postgres-mvp-postgresql"
           port: 5432
           database: "aegis_persistence"
@@ -34,8 +34,7 @@ server:
       visibility:
         driver: "sql"
         sql:
-          pluginName: "postgres"
-          driverName: "postgres"
+          driver: "postgres"
           host: "aegis-postgres-mvp-postgresql"
           port: 5432
           database: "aegis_visibility"
