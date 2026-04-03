@@ -13,7 +13,7 @@ elasticsearch:
 
 server:
   replicaCount: 1
-  # Utilisation des variables natives de l'image Docker Temporal ("Magic vars")
+  # Variables "Magiques" Temporal + Redirection Dynamic Config
   additionalEnv:
     - name: DB
       value: "postgres12"
@@ -30,6 +30,8 @@ server:
       value: "aegis_persistence"
     - name: VISIBILITY_DBNAME
       value: "aegis_visibility"
+    - name: DYNAMIC_CONFIG_FILE_PATH
+      value: "/etc/temporal/dynamic_config/dynamic_config.yaml"
   config:
     persistence:
       numHistoryShards: 512
