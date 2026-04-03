@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
-    targetRevision: feat/keda-autoscaling
+    targetRevision: main
     path: kubernetes/envs/mvp/infrastructure/db-init/manifests
   destination:
     server: https://kubernetes.default.svc
