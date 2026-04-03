@@ -21,7 +21,7 @@ server:
       default:
         driver: "sql"
         sql:
-          driver: "postgres"
+          driver: "postgres12"
           host: "aegis-postgres-mvp-postgresql"
           port: 5432
           database: "aegis_persistence"
@@ -34,7 +34,7 @@ server:
       visibility:
         driver: "sql"
         sql:
-          driver: "postgres"
+          driver: "postgres12"
           host: "aegis-postgres-mvp-postgresql"
           port: 5432
           database: "aegis_visibility"
