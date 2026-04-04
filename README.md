@@ -8,17 +8,16 @@
 
 ## 📑 Table of Contents
 
-- [Global Architecture](#️-global-architecture)
-- [Tech Stack](#️-tech-stack)
-- [Repository Structure](#-repository-structure)
-- [Quick Start (Local)](#-quick-start-local)
-- [Available Environments](#-available-environments)
-- [Deployed Services](#-deployed-services)
-- [Generic Helm Chart](#-generic-helm-chart-aegis-service)
-- [Security & DevSecOps](#-security--devsecops)
-- [Utility Scripts](#-utility-scripts)
-- [CI / Pre-commit](#-ci--pre-commit)
-- [Contributing](#-contributing)
+- [Global Architecture](#🏗️-global-architecture)
+- [Tech Stack](#🛠️-tech-stack)
+- [Repository Structure](#📁-repository-structure)
+- [Quick Start (Local)](#🚀-quick-start-local)
+- [Available Environments](#🌍-available-environments)
+- [Deployed Services](#📦-deployed-services)
+- [Security & Zero Trust](#🔐-security--zero-trust)
+- [Utility Scripts](#🔧-utility-scripts)
+- [CI / Pre-commit](#🔄-ci--pre-commit)
+- [Contributing](#🤝-contributing)
 
 ---
 
@@ -26,19 +25,13 @@
 
 The Aegis infrastructure is built on an **Event-Driven Microservices** pattern on Kubernetes 1.28+. Continuous deployment is fully driven by **ArgoCD** (GitOps): any change merged to `HEAD` is automatically synchronized into the cluster.
 
-```
-GitHub (this repo)
-       │  (GitOps — automatic sync)
-       ▼
-    ArgoCD  ──── root-app-<env>.yaml  (App of Apps)
-       │
-       ├─── aegis-api-gateway-<env>    → namespace: aegis-system
-       ├─── aegis-brain-<env>          → namespace: aegis-system
-       ├─── aegis-dashboard-<env>      → namespace: aegis-system
-       ├─── aegis-pentest-worker-<env> → namespace: aegis-system
-       ├─── aegis-postgres-<env>       → namespace: aegis-system
-       ├─── aegis-db-init-<env>        → namespace: aegis-system
-       └─── aegis-temporal-<env>       → namespace: aegis-system
+```mermaid
+graph TD
+    User([User]) -- "HTTPS (Ingress TLS)" --> Nginx[Nginx Ingress]
+    Nginx -- "mTLS (Internal CA)" --> Gateway[API Gateway]
+    Gateway -- "gRPC/mTLS" --> Brain[Brain Orchestrator]
+    Brain -- "Orchestrates" --> Workers[Pentest Workers]
+    Workers -- "Auto-scales" --> KEDA[KEDA Operator]
 ```
 
 ---
@@ -49,14 +42,12 @@ GitHub (this repo)
 |---|---|---|
 | Orchestration | Kubernetes | 1.28+ |
 | GitOps | ArgoCD | stable |
-| CNI | Cilium | — |
+| **Autoscaling** | **KEDA** | **2.x** |
+| **Cert Management** | **Cert-Manager** | **1.x** |
 | Ingress | Nginx Ingress Controller | — |
 | Workflow Engine | Temporal | 0.x (Helm) |
-| Database | PostgreSQL | 16 (Bitnami 18.5.1) |
-| Packaging | Helm v3 | — |
-| IaC Templates | Kustomize | — |
-| Secrets | Infisical / KV | — |
-| Sandbox Runtime | gVisor (`runsc`) | `sandbox-*` namespaces only |
+| Database | PostgreSQL | 16 (Bitnami) |
+| Sandbox Runtime | gVisor (`runsc`) | `sandbox-*` namespaces |
 
 ---
 
@@ -64,82 +55,51 @@ GitHub (this repo)
 
 ```
 Aegis-AI-Infra/
-├── .github/
-│   ├── CODEOWNERS                    # File ownership
-│   └── workflows/
-│       ├── build-and-test.yml        # CI build & tests
-│       ├── ci-orchestrator.yml       # CI orchestrator
-│       └── linting.yml               # YAML linting / pre-commit
-│
-├── docs/
-│   ├── getting-started.md            # ← Local setup guide
-│   ├── architecture.md               # Global infrastructure architecture
-│   ├── kubernetes.md                 # Kubernetes architecture & patterns
-│   ├── cilium-network.md             # Cilium network policies
-│   └── gvisor-sandbox.md             # gVisor sandbox runtime
-│
 ├── kubernetes/
 │   ├── bootstrap/
-│   │   └── root-app-pre-alpha.yaml   # ArgoCD App of Apps (pre-alpha env)
+│   │   └── root-app-mvp.yaml         # ArgoCD Root App for MVP
 │   │
 │   ├── charts/
-│   │   └── aegis-service/            # Generic Helm chart (all microservices)
-│   │       ├── Chart.yaml
-│   │       ├── values.yaml           # Default values
-│   │       └── templates/
-│   │           ├── deployment.yaml
-│   │           ├── service.yaml
-│   │           └── ingress.yaml
+│   │   └── aegis-service/            # Universal Helm chart
 │   │
 │   └── envs/
-│       └── pre-alpha/                # Pre-alpha environment
-│           ├── kustomization.yaml    # List of deployed applications
+│       └── mvp/                      # Minimum Viable Product (MVP)
 │           ├── api-gateway/
-│           │   ├── application.yaml  # ArgoCD Application
-│           │   └── values.yaml       # Helm overrides for this env
 │           ├── brain/
-│           ├── dashboard/
-│           ├── pentest-worker/
-│           └── infrastructure/
-│               ├── db-init/          # PostgreSQL schema init job
-│               ├── postgres/         # PostgreSQL (Bitnami)
-│               └── temporal/         # Temporal Workflow Engine
+│           ├── infrastructure/
+│           │   ├── cert-manager/     # Automated TLS/mTLS
+│           │   ├── keda/             # Event-driven autoscaling
+│           │   └── ...
 │
 └── scripts/
     ├── setup-env.sh                  # Bootstraps a full environment
-    ├── stop-env.sh                   # Stops env (scale down to 0)
-    └── teardown-env.sh               # Fully destroys env (deletes namespaces)
+    ├── generate-brain-certs.sh       # mTLS Certificate generation
+    └── teardown-env.sh               # Local cluster cleanup
 ```
 
 ---
 
 ## 🚀 Quick Start (Local)
 
-> 📖 **Full guide:** [`docs/getting-started.md`](docs/getting-started.md)
-
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) **with Kubernetes enabled** (or [kind](https://kind.sigs.k8s.io/) / [minikube](https://minikube.sigs.k8s.io/))
-- [`kubectl`](https://kubernetes.io/docs/tasks/tools/) ≥ 1.28
-- [`helm`](https://helm.sh/docs/intro/install/) ≥ 3.x
-- Access to the [`ghcr.io/aegis-ai-organizations`](https://ghcr.io) registry (GitHub token)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with Kubernetes enabled
+- `kubectl` ≥ 1.28, `helm` ≥ 3.x
+- `openssl` (for certificate generation)
 
-### Launch the `pre-alpha` environment
+### Launch the `mvp` environment
 
 ```bash
-# 1. Clone the repo
+# 1. Clone & Setup
 git clone https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
 cd Aegis-AI-Infra
 
-# 2. Make sure kubectl points to the right cluster
-kubectl config current-context
+# 2. Run the full setup
+./scripts/setup-env.sh mvp
 
-# 3. Run the full setup
-./scripts/setup-env.sh pre-alpha
-
-# 4. Access the ArgoCD UI
+# 3. Access the ArgoCD UI
 kubectl port-forward svc/argocd-server -n argocd 8080:443
-# → https://localhost:8080  (user: admin, password: see below)
+# → https://localhost:8080  (user: admin, password below)
 ```
 
 Retrieve the ArgoCD admin password:
@@ -152,123 +112,40 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 ## 🌍 Available Environments
 
-| Environment | Branch | K8s Namespace | Status |
+| Environment | Branch | Namespace | Status |
 |---|---|---|---|
-| `pre-alpha` | `HEAD` | `aegis-system` | ✅ Active |
+| `mvp` | `main` | `aegis-system` | ✅ Active (Production-Ready) |
 
 ---
 
 ## 📦 Deployed Services
 
-| Service | Image | Port | Ingress |
+| Service | Image | Role | Networking |
 |---|---|---|---|
-| `api-gateway` | `ghcr.io/.../aegis-ai-api-gateway:latest` | 8080 | `api.aegis.pre-alpha.local` |
-| `brain` | `ghcr.io/.../aegis-ai-brain:latest` | 8080 | — |
-| `dashboard` | `ghcr.io/.../aegis-ai-dashboard:latest` | 8080 | — |
-| `pentest-worker` | `ghcr.io/.../aegis-ai-worker-pentest:latest` | 8080 | — |
-| `db-init` | `postgres:16` (Kubernetes Job) | — | — |
-| `postgresql` | Bitnami PostgreSQL 16 | 5432 | — |
-| `temporal` | Temporal Helm Chart | 7233 | — |
+| `api-gateway` | `ghcr.io/.../gateway` | User Entrypoint | Ingress + mTLS |
+| `brain` | `ghcr.io/.../brain` | Orchestrator | gRPC mTLS Server |
+| `worker-pentest`| `ghcr.io/.../worker` | Offensive Engine | KEDA Scaled |
 
 ---
 
-## 🎯 Generic Helm Chart (`aegis-service`)
+## 🔐 Security & Zero Trust
 
-All Aegis microservices use the shared chart at `kubernetes/charts/aegis-service`. Per-environment values are defined in `kubernetes/envs/<env>/<service>/values.yaml`.
+Aegis enforces a **Zero Trust** security model:
 
-Key parameters:
-
-| Parameter | Description | Default |
-|---|---|---|
-| `replicaCount` | Number of replicas | `1` |
-| `image.repository` | Docker image | `nginx` |
-| `image.tag` | Image tag | `latest` |
-| `image.pullPolicy` | Pull policy | `IfNotPresent` |
-| `service.port` | K8s Service port | `80` |
-| `service.targetPort` | Container port | `8080` |
-| `env` | Environment variables | `[]` |
-| `ingress.enabled` | Enable ingress | `false` |
-| `probes.enabled` | Enable liveness/readiness | `false` |
-| `securityContext` | Pod security context | see `values.yaml` |
-
----
-
-## 🔐 Security & DevSecOps
-
-- **Network:** Deny-all by default. Strict segmentation by namespace (`aegis-gateway`, `aegis-core`, `aegis-data`, `sandbox-*`). No standard namespace has direct internet access.
-- **Runtime:** Digital Twins in `sandbox-*` use exclusively **gVisor (`runsc`)**. The standard `runc` runtime is forbidden in those namespaces.
-- **Secrets:** Injected via **Infisical/KV**. Committed files are automatically audited to prevent plaintext secrets.
-- **mTLS:** Nginx Ingress enforces mTLS (client certificate authentication) + WAF.
-
-> ⚠️ **Never commit secrets to this repository.** Pre-commit hooks and CI automatically block commits containing sensitive values.
-
----
-
-## 🔧 Utility Scripts
-
-### `./scripts/setup-env.sh <env>`
-Bootstraps a complete environment from scratch:
-1. Creates `argocd` and `aegis-system` namespaces
-2. Installs **Nginx Ingress Controller**
-3. Installs **ArgoCD**
-4. Applies the App of Apps (`root-app-<env>.yaml`)
-
-```bash
-./scripts/setup-env.sh pre-alpha
-```
-
-### `./scripts/stop-env.sh <env>`
-Stops the environment **without destroying it** (scales to 0 replicas). Pauses ArgoCD auto-sync. Ideal for freeing local resources.
-
-```bash
-./scripts/stop-env.sh pre-alpha
-# To restart: ./scripts/setup-env.sh pre-alpha
-```
-
-### `./scripts/teardown-env.sh <env>`
-**Completely destroys** the environment: deletes the App of Apps and the `aegis-system` namespace.
-
-```bash
-./scripts/teardown-env.sh pre-alpha
-```
+1. **Mutual TLS (mTLS)**: All internal gRPC/HTTP traffic between microservices is encrypted and bi-directionally authenticated via a private Internal Root CA.
+2. **Ingress TLS**: Automated SSL termination for edge traffic via **Cert-Manager**.
+3. **Network Isolation**: Deny-all by default. Strict namespace segmentation and Cilium network policies.
+4. **Runtime Security**: Untrusted workloads run exclusively on **gVisor (`runsc`)** sandboxes.
 
 ---
 
 ## 🔄 CI / Pre-commit
 
-### GitHub Actions
-
-| Workflow | Trigger | Description |
-|---|---|---|
-| `linting.yml` | `push` / `PR` | YAML lint + pre-commit hooks |
-| `build-and-test.yml` | `push` / `PR` | Build & tests |
-| `ci-orchestrator.yml` | `push` / `PR` | Global CI orchestrator |
-
-### Pre-commit (local)
-
-```bash
-# Install pre-commit
-pip install pre-commit
-pre-commit install --hook-type commit-msg
-
-# Run manually on all files
-pre-commit run --all-files
-```
-
-**Commit convention:**
+### Commit convention:
 ```
 [TYPE] Message in English
 ```
 Valid types: `ADD`, `FIX`, `UPDATE`, `REMOVE`, `DOC`, `REFACTOR`, `TEST`, `CI`, `CONFIG`, `MERGE`, `WORK`, `WIP`
-
----
-
-## 🤝 Contributing
-
-1. Create a branch from `main`
-2. Follow the commit convention (`[TYPE] Message`)
-3. Open a Pull Request — CODEOWNERS will be notified automatically
-4. CI must be green before any merge
 
 ---
 

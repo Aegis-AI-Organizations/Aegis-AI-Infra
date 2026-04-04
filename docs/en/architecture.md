@@ -1,15 +1,62 @@
-# Aegis AI Infrastructure MVP
+# 🏗️ Aegis AI Infrastructure: MVP Architecture
 
-This repository serves as the fundamental **GitOps** configuration core for Aegis AI. Powered by ArgoCD, `Aegis-AI-Infra` deploys the full suite of microservices out to the target Kubernetes cluster (`aegis-system`), establishing networking and access controls implicitly.
+**Status:** Production (MVP)
+**Cluster Orchestration:** Kubernetes 1.28+
+**GitOps Engine:** ArgoCD (App-of-Apps)
 
-## Environment: MVP (Replaces Pre-Alpha)
-We have officially deprecated the `pre-alpha` label to embrace the `mvp` release channel. The infrastructure leverages a baseline `aegis-service` Helm chart mapped iteratively to the microservice stack.
+This repository is the **Single Source of Truth** for the Aegis AI deployment. It translates declarative YAML manifests into a secured, high-intensity offensive cybersecurity platform.
 
-### Zero Trust Network Topology
-To harden our internal cluster against compromised sandboxes and internal lateral movements, we utilize **Cilium Network Policies**:
-- **Gateway Isolation**: Operates blindly. Cannot command PostgreSQL or Temporal workflows. Traffic egress allowed strictly toward the gRPC port on the `brain`.
-- **Database & Queue Confinement**: Temporal and PostgreSQL (the primary state vectors) abide by `CiliumNetworkPolicy` defaults terminating all inbound traffic, explicitly accepting connections exclusively from the Brain namespace (`brain-mvp`).
-- **Sandbox Containment**: A `CiliumClusterwideNetworkPolicy` traps any container spanning `app: vulnerable-target` inside a restrictive topology. Lateral cluster traffic is denied, allowing payload fetching solely towards the external internet.
+---
 
-## Continuous Delivery
-ArgoCD orchestrates the `mvp` manifest tree located at `kubernetes/envs/mvp/kustomization.yaml`. Updates pushed to this repository sync instantly across the staging cluster.
+## 🛰️ Platform Logic Flow
+
+The Aegis platform is designed for **asynchronous scale**. Traffic enters via a hardened edge and is orchestrated by a central "Brain" that manages worker lifecycle via Temporal.
+
+```mermaid
+graph TD
+    User([Security Analyst]) --> Nginx[Nginx Ingress]
+
+    subgraph Aegis_Core
+        Nginx --> Gateway[API Gateway]
+        Gateway --> Brain[Brain Orchestrator]
+        Brain --> Temporal[Temporal Cluster]
+        Temporal --> Workers[Pentest Workers]
+    end
+
+    subgraph Aegis_Data
+        Brain --> PG[(Postgres)]
+        Brain --> Neo4j[(Neo4j Graph)]
+    end
+
+    subgraph Scaling_Engine
+        Temporal --> KEDA[KEDA Operator]
+        KEDA --> Workers
+    end
+```
+
+---
+
+## 🔐 Zero Trust Network Topology
+
+Aegis enforces a **Default-Deny** network posture using **Cilium Network Policies**:
+
+### 1. Unified Identity (Internal mTLS)
+No microservice trusts another based on IP. All internal communication is cryptographically verified using an internal Certificate Authority (CA) managed by **Cert-Manager**.
+
+### 2. Micro-segmentation
+- **Gateway Isolation**: The Gateway is prevented from reaching any database directly. All data access must go through the Brain's gRPC interface.
+- **Data Confinement**: PostgreSQL and Neo4j only allow inbound connections from the `brain` service.
+- **Sandbox Containment**: Vulnerable target containers are isolated in a restricted topology. They can reach the internet to fetch payloads but are strictly blocked from probe-scanning the internal cluster infrastructure.
+
+---
+
+## 🔄 Continuous Delivery (GitOps)
+
+ArgoCD monitors the `main` branch of this repository. When a change is detected:
+1. **Validation**: Kustomize renders the manifests for the `mvp` environment.
+2. **Sync**: ArgoCD applies the diff to the cluster.
+3. **Health Check**: Pods are rolled out and verified via Readiness/Liveness probes before the old version is terminated.
+
+---
+
+*Aegis AI Infrastructure Engineering — 2026*
