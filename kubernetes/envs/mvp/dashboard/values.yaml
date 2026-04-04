@@ -11,10 +11,15 @@ service:
   type: ClusterIP
   port: 80
   targetPort: 80
-
+annotations:
+  cert-manager.io/cluster-issuer: aegis-ca-issuer
 ingress:
   enabled: true
   className: "nginx"
+  tls:
+    - hosts:
+        - app.aegis.mvp.local
+      secretName: dashboard-tls
   hosts:
     - host: app.aegis.mvp.local
       paths:

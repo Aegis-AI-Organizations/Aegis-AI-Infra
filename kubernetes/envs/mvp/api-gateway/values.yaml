@@ -1,6 +1,7 @@
 nameOverride: "api-gateway-mvp"
 annotations:
   restart-dummy: "3"
+  cert-manager.io/cluster-issuer: aegis-ca-issuer
 
 replicaCount: 1
 
@@ -17,6 +18,10 @@ service:
 ingress:
   enabled: true
   className: "nginx"
+  tls:
+    - hosts:
+        - api.aegis.mvp.local
+      secretName: api-gateway-tls
   hosts:
     - host: api.aegis.mvp.local
       paths:
@@ -68,16 +73,32 @@ env:
     value: "/etc/temporal/config/tls/tls.crt"
   - name: TEMPORAL_TLS_KEY_PATH
     value: "/etc/temporal/config/tls/tls.key"
+  - name: BRAIN_TLS_ENABLE
+    value: "true"
+  - name: BRAIN_TLS_CA_CERT
+    value: "/etc/brain/certs/ca.crt"
+  - name: BRAIN_TLS_CLIENT_CERT
+    value: "/etc/brain/certs/tls.crt"
+  - name: BRAIN_TLS_CLIENT_KEY
+    value: "/etc/brain/certs/tls.key"
+  - name: BRAIN_TLS_SERVER_NAME
+    value: "brain-mvp.aegis-system.svc.cluster.local"
 
 volumeMounts:
   - name: temporal-tls
     mountPath: /etc/temporal/config/tls
+    readOnly: true
+  - name: brain-client-tls
+    mountPath: /etc/brain/certs
     readOnly: true
 
 volumes:
   - name: temporal-tls
     secret:
       secretName: temporal-client-tls
+  - name: brain-client-tls
+    secret:
+      secretName: brain-client-tls
 
 resources:
   limits:

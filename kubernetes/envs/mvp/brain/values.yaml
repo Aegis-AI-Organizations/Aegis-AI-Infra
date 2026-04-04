@@ -53,16 +53,30 @@ env:
     value: "/etc/temporal/config/tls/tls.crt"
   - name: TEMPORAL_TLS_KEY_PATH
     value: "/etc/temporal/config/tls/tls.key"
+  - name: BRAIN_TLS_ENABLE
+    value: "true"
+  - name: BRAIN_TLS_CA_CERT
+    value: "/etc/brain/certs/ca.crt"
+  - name: BRAIN_TLS_SERVER_CERT
+    value: "/etc/brain/certs/tls.crt"
+  - name: BRAIN_TLS_SERVER_KEY
+    value: "/etc/brain/certs/tls.key"
 
 volumeMounts:
   - name: temporal-tls
     mountPath: /etc/temporal/config/tls
+    readOnly: true
+  - name: brain-server-tls
+    mountPath: /etc/brain/certs
     readOnly: true
 
 volumes:
   - name: temporal-tls
     secret:
       secretName: temporal-client-tls
+  - name: brain-server-tls
+    secret:
+      secretName: brain-server-tls
 
 resources:
   limits:
