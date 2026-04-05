@@ -109,11 +109,13 @@ if [ -f "$ENV_FILE" ]; then
   rm -f /tmp/aegis-env-tmp.txt
 fi
 
-# Generate mTLS Certificates for Temporal and KEDA
+# Generate mTLS Certificates for Temporal and Brain
 if [ -f "scripts/generate-temporal-certs.sh" ]; then
     ./scripts/generate-temporal-certs.sh "$ENV"
+    ./scripts/generate-brain-certs.sh "$ENV"
 elif [ -f "generate-temporal-certs.sh" ]; then
     ./generate-temporal-certs.sh "$ENV"
+    ./generate-brain-certs.sh "$ENV"
 fi
 
 echo "📥 Installing Ingress Nginx..."
