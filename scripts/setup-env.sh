@@ -180,7 +180,7 @@ PG_POD_LBL="app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=aegis-p
 # 1. Wait for pod existence first to avoid "no matching resources found" crashing kubectl wait
 timeout=300
 elapsed=0
-until kubectl get pods -l "$PG_POD_LBL" -n aegis-system 2>/dev/null | grep -q "pod/" || [ $elapsed -ge $timeout ]; do
+until kubectl get pods -l "$PG_POD_LBL" -n aegis-system -o name 2>/dev/null | grep -q "pod/" || [ $elapsed -ge $timeout ]; do
     echo "⏳ Waiting for PostgreSQL pods to be created..."
     sleep 5
     elapsed=$((elapsed + 5))
