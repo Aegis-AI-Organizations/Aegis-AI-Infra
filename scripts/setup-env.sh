@@ -142,11 +142,52 @@ else
     kubectl apply -f ../kubernetes/bootstrap/root-app-$ENV.yaml
 fi
 
-# Authenticate to GHCR if token is set
-if [[ -n "$GHCR_TOKEN" && -n "$GHCR_USERNAME" ]]; then
-  echo "🔐 Authenticating to GHCR..."
-  echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+echo "🔄 Resuming ArgoCD management and scaling up core services..."
+# Resume auto-sync for all apps in this environment (in case it was stopped by stop-env.sh)
+for app in $(kubectl get applications -n argocd -o name | grep "$ENV"); do
+  kubectl patch "$app" -n argocd --type=merge \
+    -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' \
+    >/dev/null 2>&1 && echo "   ✓ Resumed $app sync" || true
+done
+
+# Explicit scale up of core DB if it was at 0
+PG_STATEFULSET="aegis-postgres-$ENV-postgresql"
+if kubectl get statefulset "$PG_STATEFULSET" -n aegis-system >/dev/null 2>&1; then
+    replicas=$(kubectl get statefulset "$PG_STATEFULSET" -n aegis-system -o jsonpath='{.spec.replicas}')
+    if [ "$replicas" -eq 0 ]; then
+        echo "📈 Scaling up PostgreSQL from 0..."
+        kubectl scale statefulset "$PG_STATEFULSET" --replicas=1 -n aegis-system
+    fi
 fi
+
+# Wait for PG to be ready
+echo "🐘 Waiting for PostgreSQL to be healthy..."
+kubectl wait --for=condition=ready pod -l "app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=aegis-postgres-$ENV" -n aegis-system --timeout=300s
+
+# Check if databases exist (local clusters can lose data on restart)
+echo "🔍 Checking database integrity..."
+HAS_CLIENT_DB=$(kubectl exec -n aegis-system statefulset/$PG_STATEFULSET -- sh -c "PGPASSWORD=$POSTGRES_PASSWORD psql -U aegis_admin -lqt" | cut -d \| -f 1 | grep -qw "aegis_db" && echo "yes" || echo "no")
+HAS_TEMPORAL_DB=$(kubectl exec -n aegis-system statefulset/$PG_STATEFULSET -- sh -c "PGPASSWORD=$POSTGRES_PASSWORD psql -U aegis_admin -lqt" | cut -d \| -f 1 | grep -qw "aegis_persistence" && echo "yes" || echo "no")
+
+if [ "$HAS_CLIENT_DB" = "no" ]; then
+    echo "⚠️  Application database missing. Forcing database initialization..."
+    kubectl delete job aegis-db-init-$ENV -n aegis-system --ignore-not-found
+fi
+
+if [ "$HAS_TEMPORAL_DB" = "no" ]; then
+    echo "⚠️  Temporal database missing. Forcing schema initialization..."
+    kubectl delete job -n aegis-system -l "app.kubernetes.io/instance=aegis-temporal-$ENV,app.kubernetes.io/component=database" --ignore-not-found
+fi
+
+# Kick ArgoCD root app and wait for Jobs to complete
+kubectl patch application aegis-prototype-$ENV -n argocd --type=merge \
+  -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
+
+echo "⏳ Waiting for initialization jobs to be re-created and finish..."
+sleep 10 # Buffer for ArgoCD reconciliation
+kubectl wait --for=condition=complete job -l "app.kubernetes.io/instance=aegis-temporal-$ENV,app.kubernetes.io/component=database" -n aegis-system --timeout=300s || true
+kubectl wait --for=condition=complete job/aegis-db-init-$ENV -n aegis-system --timeout=300s || true
+
 # Auto-initialize Temporal Namespace (synchronous to ensure services don't crash)
 echo "🕒 Initializing Temporal namespace..."
 # Wait up to 5 minutes for Temporal AdminTools to be created by ArgoCD
