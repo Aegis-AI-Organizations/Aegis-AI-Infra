@@ -213,9 +213,27 @@ fi
 kubectl patch application aegis-prototype-$ENV -n argocd --type=merge \
   -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
 
-echo "⏳ Waiting for initialization jobs to be re-created and finish..."
-sleep 10 # Buffer for ArgoCD reconciliation
-kubectl wait --for=condition=complete job -l "app.kubernetes.io/instance=aegis-temporal-$ENV,app.kubernetes.io/component=database" -n aegis-system --timeout=300s || true
+echo "🕒 Initializing Temporal databases and schema manually..."
+# 1. Wait for AdminTools (which natively waits for Postgres)
+kubectl rollout status deployment/aegis-temporal-$ENV-admintools -n aegis-system --timeout=300s
+
+# 2. Run schema initialization from the stable admintools container
+ADM_POD=$(kubectl get pod -l app.kubernetes.io/instance=aegis-temporal-$ENV,app.kubernetes.io/component=admintools -n aegis-system -o name | head -n 1)
+
+echo "   -> Creating databases..."
+# Ignore errors if they already exist (idempotent)
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database -db aegis_persistence >/dev/null 2>&1 || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database -db aegis_visibility >/dev/null 2>&1 || true
+
+echo "   -> Setting up schema..."
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence setup-schema -v 0.0 >/dev/null 2>&1 || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility setup-schema -v 0.0 >/dev/null 2>&1 || true
+
+echo "   -> Updating schema to latest..."
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence update-schema -d /etc/temporal/schema/postgresql/v12/temporal/versioned >/dev/null 2>&1 || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility update-schema -d /etc/temporal/schema/postgresql/v12/visibility/versioned >/dev/null 2>&1 || true
+
+echo "⏳ Waiting for Aegis AI application job..."
 kubectl wait --for=condition=complete job/aegis-db-init-$ENV -n aegis-system --timeout=300s || true
 
 # Auto-initialize Temporal Namespace (synchronous to ensure services don't crash)

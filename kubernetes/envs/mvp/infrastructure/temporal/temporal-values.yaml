@@ -154,28 +154,9 @@ admintools:
       mountPath: /etc/temporal/config/tls
 
 # Root level schema block for fallback
+# Schema Job is managed manually via setup-env.sh to avoid race conditions
 schema:
   setup:
-    additionalInitContainers:
-      - name: wait-for-postgres
-        image: postgres:16-alpine
-        command:
-          - sh
-          - -c
-          - |
-            until pg_isready -h aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local -p 5432 -U aegis_admin; do
-              echo "Waiting for postgres..."
-              sleep 2
-            done
+    enabled: false
   update:
-    additionalInitContainers:
-      - name: wait-for-postgres
-        image: postgres:16-alpine
-        command:
-          - sh
-          - -c
-          - |
-            until pg_isready -h aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local -p 5432 -U aegis_admin; do
-              echo "Waiting for postgres..."
-              sleep 2
-            done
+    enabled: false
