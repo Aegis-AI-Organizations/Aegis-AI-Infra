@@ -30,7 +30,7 @@ server:
     - name: DB
       value: "postgres12"
     - name: POSTGRES_SEEDS
-      value: "aegis-postgres-mvp-postgresql"
+      value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local"
     - name: POSTGRES_USER
       value: "aegis_admin"
     - name: POSTGRES_PWD
@@ -55,7 +55,7 @@ server:
         driver: "sql"
         sql:
           driver: "postgres12"
-          host: "aegis-postgres-mvp-postgresql"
+          host: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local"
           port: 5432
           database: "aegis_persistence"
           user: "aegis_admin"
@@ -68,7 +68,7 @@ server:
         driver: "sql"
         sql:
           driver: "postgres12"
-          host: "aegis-postgres-mvp-postgresql"
+          host: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local"
           port: 5432
           database: "aegis_visibility"
           user: "aegis_admin"
@@ -106,6 +106,33 @@ server:
     - name: tls
       mountPath: /etc/temporal/config/tls
 
+  # Direct placement of schema job config inside server
+  schema:
+    setup:
+      additionalInitContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local -p 5432 -U aegis_admin; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+    update:
+      additionalInitContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local -p 5432 -U aegis_admin; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+
 admintools:
   additionalEnv:
     - name: TEMPORAL_CLI_ADDRESS
@@ -126,6 +153,7 @@ admintools:
     - name: tls
       mountPath: /etc/temporal/config/tls
 
+# Root level schema block for fallback
 schema:
   setup:
     additionalInitContainers:
@@ -135,7 +163,7 @@ schema:
           - sh
           - -c
           - |
-            until pg_isready -h aegis-postgres-mvp-postgresql -p 5432 -U aegis_admin; do
+            until pg_isready -h aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local -p 5432 -U aegis_admin; do
               echo "Waiting for postgres..."
               sleep 2
             done
@@ -147,7 +175,7 @@ schema:
           - sh
           - -c
           - |
-            until pg_isready -h aegis-postgres-mvp-postgresql -p 5432 -U aegis_admin; do
+            until pg_isready -h aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local -p 5432 -U aegis_admin; do
               echo "Waiting for postgres..."
               sleep 2
             done
