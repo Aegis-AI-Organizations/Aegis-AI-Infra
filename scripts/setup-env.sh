@@ -215,6 +215,13 @@ kubectl patch application aegis-prototype-$ENV -n argocd --type=merge \
 
 echo "🕒 Initializing Temporal databases and schema manually..."
 # 1. Wait for AdminTools (which natively waits for Postgres)
+timeout=300
+elapsed=0
+until kubectl get deployment aegis-temporal-$ENV-admintools -n aegis-system >/dev/null 2>&1 || [ $elapsed -ge $timeout ]; do
+    echo "   ...waiting for admintools deployment to be created by ArgoCD..."
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
 kubectl rollout status deployment/aegis-temporal-$ENV-admintools -n aegis-system --timeout=300s
 
 # 2. Run schema initialization from the stable admintools container
@@ -283,8 +290,10 @@ while ! kubectl exec -n aegis-system deployment/aegis-temporal-$ENV-admintools -
     elapsed=$((elapsed + 5))
 done
 
-echo "⏳ Waiting for Aegis services to be ready..."
+echo "🚀 Finalizing core Aegis services..."
+until kubectl get deployment api-gateway-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
 kubectl rollout status deployment/api-gateway-$ENV -n aegis-system --timeout=300s
+until kubectl get deployment brain-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
 kubectl rollout status deployment/brain-$ENV -n aegis-system --timeout=300s
 
 echo "🚀 Everything is ready! ArgoCD is now managing your '$ENV' environment."
