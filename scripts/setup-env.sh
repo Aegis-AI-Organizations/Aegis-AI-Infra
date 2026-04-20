@@ -230,16 +230,16 @@ ADM_POD=$(kubectl get pod -l app.kubernetes.io/instance=aegis-temporal-$ENV,app.
 
 echo "   -> Creating databases..."
 # Ignore errors if they already exist (idempotent)
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database -db aegis_persistence >/dev/null 2>&1 || true
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database -db aegis_visibility >/dev/null 2>&1 || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database -db aegis_persistence || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database -db aegis_visibility || true
 
 echo "   -> Setting up schema..."
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence setup-schema -v 0.0 >/dev/null 2>&1 || true
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility setup-schema -v 0.0 >/dev/null 2>&1 || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence setup-schema -v 0.0 || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility setup-schema -v 0.0 || true
 
 echo "   -> Updating schema to latest..."
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence update-schema -d /etc/temporal/schema/postgresql/v12/temporal/versioned >/dev/null 2>&1 || true
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility update-schema -d /etc/temporal/schema/postgresql/v12/visibility/versioned >/dev/null 2>&1 || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence update-schema -d /etc/temporal/schema/postgresql/v12/temporal/versioned || true
+kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility update-schema -d /etc/temporal/schema/postgresql/v12/visibility/versioned || true
 
 echo "⏳ Waiting for Aegis AI application job..."
 # Non-blocking wait loop with progress feedback
