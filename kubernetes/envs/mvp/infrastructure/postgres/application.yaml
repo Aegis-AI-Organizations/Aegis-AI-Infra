@@ -14,6 +14,7 @@ spec:
     helm:
       valuesObject:
         global:
+          imageRegistry: public.ecr.aws
           postgresql:
             auth:
               existingSecret: "aegis-env"
@@ -22,6 +23,10 @@ spec:
                 userPasswordKey: "POSTGRES_PASSWORD"
               database: "aegis_db"
               username: "aegis_admin"
+        image:
+          registry: public.ecr.aws
+          repository: bitnami/postgresql
+          tag: 16.2.0
         primary:
           image:
             registry: public.ecr.aws
