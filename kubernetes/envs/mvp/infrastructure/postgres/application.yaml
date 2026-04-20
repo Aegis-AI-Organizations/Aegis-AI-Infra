@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: oci://registry-1.docker.io/bitnamicharts
+    repoURL: https://charts.bitnami.com/bitnami
     chart: postgresql
-    targetRevision: 18.5.1
+    targetRevision: 12.1.2
     helm:
       valuesObject:
         global:
