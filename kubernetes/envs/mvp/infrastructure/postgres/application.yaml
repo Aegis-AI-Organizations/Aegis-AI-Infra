@@ -23,6 +23,10 @@ spec:
               database: "aegis_db"
               username: "aegis_admin"
         primary:
+          image:
+            registry: public.ecr.aws
+            repository: bitnami/postgresql
+            tag: 16.2.0
           persistence:
             enabled: false
   destination:
