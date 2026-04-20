@@ -135,6 +135,19 @@ server:
 
 admintools:
   additionalEnv:
+    - name: SQL_PLUGIN
+      value: "postgres12"
+    - name: SQL_HOST
+      value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local"
+    - name: SQL_PORT
+      value: "5432"
+    - name: SQL_USER
+      value: "aegis_admin"
+    - name: SQL_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: aegis-env
+          key: POSTGRES_PASSWORD
     - name: TEMPORAL_CLI_ADDRESS
       value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
     - name: TEMPORAL_CLI_TLS_CA
