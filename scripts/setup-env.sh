@@ -143,6 +143,15 @@ else
 fi
 
 echo "🔄 Resuming ArgoCD management and scaling up core services..."
+# Wait for ArgoCD to discover the sub-applications after the root app is deployed
+echo "⏳ Waiting for ArgoCD to discover child applications..."
+timeout=60
+elapsed=0
+until [[ $(kubectl get applications -n argocd -o name | grep "$ENV" | wc -l) -gt 1 ]] || [ $elapsed -ge $timeout ]; do
+    sleep 3
+    elapsed=$((elapsed + 3))
+done
+
 # Resume auto-sync for all apps in this environment (in case it was stopped by stop-env.sh)
 for app in $(kubectl get applications -n argocd -o name | grep "$ENV"); do
   kubectl patch "$app" -n argocd --type=merge \
@@ -154,7 +163,7 @@ done
 PG_STATEFULSET="aegis-postgres-$ENV-postgresql"
 if kubectl get statefulset "$PG_STATEFULSET" -n aegis-system >/dev/null 2>&1; then
     replicas=$(kubectl get statefulset "$PG_STATEFULSET" -n aegis-system -o jsonpath='{.spec.replicas}')
-    if [ "$replicas" -eq 0 ]; then
+    if [[ "$replicas" -eq 0 ]]; then
         echo "📈 Scaling up PostgreSQL from 0..."
         kubectl scale statefulset "$PG_STATEFULSET" --replicas=1 -n aegis-system
     fi
@@ -162,7 +171,23 @@ fi
 
 # Wait for PG to be ready
 echo "🐘 Waiting for PostgreSQL to be healthy..."
-kubectl wait --for=condition=ready pod -l "app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=aegis-postgres-$ENV" -n aegis-system --timeout=300s
+PG_POD_LBL="app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=aegis-postgres-$ENV"
+# 1. Wait for pod existence first to avoid "no matching resources found" crashing kubectl wait
+timeout=300
+elapsed=0
+until kubectl get pods -l "$PG_POD_LBL" -n aegis-system 2>/dev/null | grep -q "pod/" || [ $elapsed -ge $timeout ]; do
+    echo "⏳ Waiting for PostgreSQL pods to be created..."
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
+
+if [ $elapsed -ge $timeout ]; then
+    echo "❌ Timeout waiting for PostgreSQL pods to be created."
+    exit 1
+fi
+
+# 2. Now wait for readiness
+kubectl wait --for=condition=ready pod -l "$PG_POD_LBL" -n aegis-system --timeout=300s
 
 # Check if databases exist (local clusters can lose data on restart)
 echo "🔍 Checking database integrity..."
