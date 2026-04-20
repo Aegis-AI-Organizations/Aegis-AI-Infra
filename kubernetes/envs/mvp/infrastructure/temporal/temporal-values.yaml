@@ -125,3 +125,29 @@ admintools:
   additionalVolumeMounts:
     - name: tls
       mountPath: /etc/temporal/config/tls
+
+schema:
+  setup:
+    additionalInitContainers:
+      - name: wait-for-postgres
+        image: postgres:16-alpine
+        command:
+          - sh
+          - -c
+          - |
+            until pg_isready -h aegis-postgres-mvp-postgresql -p 5432 -U aegis_admin; do
+              echo "Waiting for postgres..."
+              sleep 2
+            done
+  update:
+    additionalInitContainers:
+      - name: wait-for-postgres
+        image: postgres:16-alpine
+        command:
+          - sh
+          - -c
+          - |
+            until pg_isready -h aegis-postgres-mvp-postgresql -p 5432 -U aegis_admin; do
+              echo "Waiting for postgres..."
+              sleep 2
+            done
