@@ -166,6 +166,7 @@ kubectl patch application aegis-temporal-$ENV -n argocd --type=merge -p '{"metad
 
 # Explicit scale up of core DB if it was at 0
 PG_STATEFULSET="aegis-postgres-$ENV-postgresql"
+PG_HOST="aegis-postgres-$ENV-postgresql.aegis-system.svc.cluster.local"
 if kubectl get statefulset "$PG_STATEFULSET" -n aegis-system >/dev/null 2>&1; then
     replicas=$(kubectl get statefulset "$PG_STATEFULSET" -n aegis-system -o jsonpath='{.spec.replicas}')
     if [[ "$replicas" -eq 0 ]]; then
@@ -241,7 +242,14 @@ kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12
 kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility update-schema -d /etc/temporal/schema/postgresql/v12/visibility/versioned >/dev/null 2>&1 || true
 
 echo "⏳ Waiting for Aegis AI application job..."
-kubectl wait --for=condition=complete job/aegis-db-init-$ENV -n aegis-system --timeout=300s || true
+# Non-blocking wait loop with progress feedback
+timeout=300
+elapsed=0
+until kubectl get job/aegis-db-init-$ENV -n aegis-system -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null | grep -q "True" || [ $elapsed -ge $timeout ]; do
+    echo "   ...waiting for database seeding to complete ($elapsed/$timeout s)..."
+    sleep 10
+    elapsed=$((elapsed + 10))
+done
 
 # Auto-initialize Temporal Namespace (synchronous to ensure services don't crash)
 echo "🕒 Initializing Temporal namespace..."

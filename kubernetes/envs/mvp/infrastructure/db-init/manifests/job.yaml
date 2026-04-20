@@ -14,7 +14,7 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: PGHOST
-              value: aegis-postgres-mvp-postgresql
+              value: aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local
             - name: PGPORT
               value: "5432"
             - name: PGDATABASE
