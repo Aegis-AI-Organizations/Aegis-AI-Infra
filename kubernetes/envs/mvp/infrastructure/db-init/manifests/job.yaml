@@ -4,6 +4,7 @@ metadata:
   name: aegis-db-init-mvp
   namespace: aegis-system
 spec:
+  ttlSecondsAfterFinished: 100
   backoffLimit: 6
   template:
     spec:

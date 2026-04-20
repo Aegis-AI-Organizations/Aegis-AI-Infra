@@ -35,6 +35,7 @@ kubectl delete apiservice v1alpha1.keda.sh --ignore-not-found || true
 kubectl delete apiservice v1alpha1.eventing.keda.sh --ignore-not-found || true
 
 echo "🧹 Cleaning up Aegis namespaces, KEDA, ArgoCD, and Ingress..."
+kubectl delete job aegis-db-init-$ENV -n aegis-system --ignore-not-found || true
 kubectl delete namespace aegis-system --ignore-not-found || true
 kubectl delete namespace keda --ignore-not-found || true
 kubectl delete namespace argocd --ignore-not-found || true

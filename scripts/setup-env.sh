@@ -241,7 +241,9 @@ echo "   -> Updating schema to latest..."
 kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence update-schema -d /etc/temporal/schema/postgresql/v12/temporal/versioned || true
 kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility update-schema -d /etc/temporal/schema/postgresql/v12/visibility/versioned || true
 
-echo "⏳ Waiting for Aegis AI application job..."
+echo "⏳ Cleaning up and waiting for Aegis AI application job..."
+# Force job recreation if it already exists to ensure seeding runs on new postgres instance
+kubectl delete job aegis-db-init-$ENV -n aegis-system --ignore-not-found >/dev/null 2>&1 || true
 # Non-blocking wait loop with progress feedback
 timeout=300
 elapsed=0
