@@ -32,6 +32,20 @@ spec:
             registry: public.ecr.aws
             repository: bitnami/postgresql
             tag: 16.2.0
+          configuration: |-
+            max_connections = 300
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          initdb:
+            scripts:
+              init-databases.sql: |
+                CREATE DATABASE aegis_persistence;
+                CREATE DATABASE aegis_visibility;
           persistence:
             enabled: false
   destination:
