@@ -144,12 +144,12 @@ fi
 
 echo "🔄 Resuming ArgoCD management and scaling up core services..."
 # Wait for ArgoCD to discover the sub-applications after the root app is deployed
-echo "⏳ Waiting for ArgoCD to discover child applications..."
-timeout=60
+echo "⏳ Waiting for ArgoCD to discover core applications (Postgres, Temporal)..."
+timeout=120
 elapsed=0
-until [[ $(kubectl get applications -n argocd -o name | grep "$ENV" | wc -l) -gt 1 ]] || [ $elapsed -ge $timeout ]; do
-    sleep 3
-    elapsed=$((elapsed + 3))
+until (kubectl get application aegis-postgres-$ENV -n argocd >/dev/null 2>&1 && kubectl get application aegis-temporal-$ENV -n argocd >/dev/null 2>&1) || [ $elapsed -ge $timeout ]; do
+    sleep 5
+    elapsed=$((elapsed + 5))
 done
 
 # Resume auto-sync for all apps in this environment (in case it was stopped by stop-env.sh)
@@ -158,6 +158,11 @@ for app in $(kubectl get applications -n argocd -o name | grep "$ENV"); do
     -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}' \
     >/dev/null 2>&1 && echo "   ✓ Resumed $app sync" || true
 done
+
+# Force sync core components to overcome initial discovery lag
+echo "🔄 Forcing immediate sync of core infrastructure..."
+kubectl patch application aegis-postgres-$ENV -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
+kubectl patch application aegis-temporal-$ENV -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
 
 # Explicit scale up of core DB if it was at 0
 PG_STATEFULSET="aegis-postgres-$ENV-postgresql"
