@@ -5,6 +5,10 @@ metadata:
   name: {{ .Values.nameOverride | default .Release.Name }}
   labels:
     app: {{ .Values.nameOverride | default .Release.Name }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
