@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'viewer',
+    role user_role NOT NULL DEFAULT 'superadmin',
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -92,6 +92,13 @@ DO $$ BEGIN
         WHERE table_name='users' AND column_name='name' AND table_schema = 'public'
     ) THEN
         ALTER TABLE users ADD COLUMN name VARCHAR(255);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='users' AND column_name='avatar_url' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE users ADD COLUMN avatar_url TEXT;
     END IF;
 END $$;
 
