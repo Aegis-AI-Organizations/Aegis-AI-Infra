@@ -8,6 +8,7 @@ resources:
   - api-gateway/application.yaml
   - brain/application.yaml
   - dashboard/application.yaml
+  - dashboard/config-application.yaml
   - infrastructure/db-init/application.yaml
   - infrastructure/postgres/application.yaml
   - infrastructure/temporal/application.yaml

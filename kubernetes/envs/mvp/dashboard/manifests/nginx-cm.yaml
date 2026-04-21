@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-nginx-config
+  namespace: aegis-system
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        client_max_body_size 50M;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Proxy toutes les requêtes /api/* vers l'API Gateway interne
+        location ^~ /api/ {
+            proxy_pass INTERNAL_API_URL_PLACEHOLDER;
+            proxy_set_header Host api-gateway-mvp;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_http_version 1.1;
+            proxy_buffering off;
+            proxy_read_timeout 120s;
+            proxy_send_timeout 120s;
+            proxy_connect_timeout 10s;
+            proxy_pass_header Content-Type;
+            proxy_pass_header Content-Disposition;
+            proxy_pass_header Content-Length;
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+            if ($request_method = OPTIONS) {
+                return 204;
+            }
+        }
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, max-age=31536000, immutable";
+        }
+    }

@@ -38,6 +38,27 @@ resources:
     cpu: 50m
     memory: 64Mi
 
+initContainers:
+  - name: config-init
+    image: busybox:latest
+    command: ["sh", "-c", "cp /tmp/nginx/default.conf /etc/nginx/conf.d/default.conf"]
+    volumeMounts:
+      - name: nginx-cm-volume
+        mountPath: /tmp/nginx
+      - name: nginx-conf-dir
+        mountPath: /etc/nginx/conf.d
+
+volumeMounts:
+  - name: nginx-conf-dir
+    mountPath: /etc/nginx/conf.d
+
+volumes:
+  - name: nginx-cm-volume
+    configMap:
+      name: dashboard-nginx-config
+  - name: nginx-conf-dir
+    emptyDir: {}
+
 networkPolicy:
   enabled: true
   allowDNS: true
