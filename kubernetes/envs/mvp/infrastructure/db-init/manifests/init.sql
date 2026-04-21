@@ -69,7 +69,10 @@ CREATE TABLE IF NOT EXISTS licenses (
 
 -- 4. Identity & Access Management
 DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('superadmin', 'owner', 'operator', 'viewer');
+    CREATE TYPE user_role AS ENUM (
+        'superadmin', 'admin', 'billing_aegis', 'technicien', 'support', 'commercial',
+        'owner', 'billing_client', 'operateur', 'viewer'
+    );
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
