@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) UNIQUE NOT NULL,
     logo_url VARCHAR(255),
+    deployment_token VARCHAR(255) UNIQUE,
     owner_id UUID, -- Circular reference handled via ALTER TABLE below
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -111,6 +112,14 @@ DO $$ BEGIN
         SELECT 1 FROM pg_constraint WHERE conname = 'fk_companies_owner'
     ) THEN
         ALTER TABLE companies ADD CONSTRAINT fk_companies_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL;
+    END IF;
+
+    -- Migration: Ensure deployment_token exists on 'companies'
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='companies' AND column_name='deployment_token' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE companies ADD COLUMN deployment_token VARCHAR(255) UNIQUE;
     END IF;
 END $$;
 
