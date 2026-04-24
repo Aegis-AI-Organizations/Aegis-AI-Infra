@@ -157,3 +157,28 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id
  CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs (user_id);
  CREATE INDEX IF NOT EXISTS idx_audit_logs_company_id ON audit_logs (company_id);
  CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs (timestamp);
+
+-- 7. Billing System (Licences & Tokens)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='org_size') THEN
+        ALTER TABLE companies ADD COLUMN org_size VARCHAR(50);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='org_type') THEN
+        ALTER TABLE companies ADD COLUMN org_type VARCHAR(100);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='token_balance') THEN
+        ALTER TABLE companies ADD COLUMN token_balance BIGINT DEFAULT 0 NOT NULL;
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS token_ledger (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    amount BIGINT NOT NULL,
+    reason VARCHAR(255) NOT NULL,
+    scan_id UUID REFERENCES scans(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_token_ledger_company_id ON token_ledger(company_id);
+CREATE INDEX IF NOT EXISTS idx_token_ledger_created_at ON token_ledger(created_at);
