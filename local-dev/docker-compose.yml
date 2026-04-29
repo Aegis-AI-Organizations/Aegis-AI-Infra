@@ -1,0 +1,122 @@
+services:
+  # --- Infrastructure ---
+  db:
+    image: postgres:16-alpine
+    container_name: aegis-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AEGIS_SEED_USER_EMAIL: ${AEGIS_SEED_USER_EMAIL}
+      AEGIS_SEED_USER_PASSWORD: ${AEGIS_SEED_USER_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - aegis-db-data:/var/lib/postgresql/data
+      - ../kubernetes/envs/mvp/infrastructure/db-init/manifests/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ../kubernetes/envs/mvp/infrastructure/db-init/manifests/seed.sql:/tmp/seed.sql
+    command: >
+      sh -c "cp /tmp/seed.sql /docker-entrypoint-initdb.d/20-seed.sql && 
+             sed -i \"s/:'AEGIS_SEED_USER_EMAIL'/'$${AEGIS_SEED_USER_EMAIL}'/g\" /docker-entrypoint-initdb.d/20-seed.sql &&
+             sed -i \"s/:'AEGIS_SEED_USER_PASSWORD'/'$${AEGIS_SEED_USER_PASSWORD}'/g\" /docker-entrypoint-initdb.d/20-seed.sql &&
+             docker-entrypoint.sh postgres"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    container_name: aegis-temporal
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PWD=${POSTGRES_PASSWORD}
+      - POSTGRES_SEEDS=db
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # --- Application Services ---
+  brain:
+    image: public.ecr.aws/docker/library/python:3.11-slim
+    container_name: aegis-brain
+    working_dir: /app
+    restart: on-failure
+    command: >
+      sh -c "apt-get update && apt-get install -y git build-essential libpq-dev && 
+             pip install uv && 
+             uv sync --no-dev && 
+             uv run python src/main.py"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=db:5432
+      - TEMPORAL_HOST=temporal:7233
+      - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}
+      - JWT_SECRET=${JWT_SECRET}
+      - GRPC_PORT=${GRPC_PORT}
+      - DEBUG=true
+      - ENV=dev
+    volumes:
+      - ../../Aegis-AI-Brain:/app
+    ports:
+      - "50051:50051"
+    depends_on:
+      db:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+
+  gateway:
+    image: public.ecr.aws/docker/library/golang:1.24-alpine
+    container_name: aegis-gateway
+    working_dir: /app
+    restart: on-failure
+    command: >
+      sh -c "apk add --no-cache git build-base && 
+             GOTOOLCHAIN=local+auto go run cmd/api/main.go"
+    environment:
+      - PORT=${PORT}
+      - DB_HOST=db:5432
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - BRAIN_GRPC_ADDR=brain:50051
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../Aegis-AI-Api-Gateway:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      brain:
+        condition: service_started
+
+  dashboard:
+    image: public.ecr.aws/docker/library/node:20
+    container_name: aegis-dashboard
+    working_dir: /app
+    command: >
+      sh -c "npm install --ignore-scripts && 
+             npx panda codegen && 
+             npm run dev"
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    ports:
+      - "3000:5173"
+    volumes:
+      - ../../Aegis-AI-Dashboard:/app
+    depends_on:
+      - gateway
+
+volumes:
+  aegis-db-data:
