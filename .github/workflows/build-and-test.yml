@@ -6,12 +6,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Tooling
-        run: |
-          sudo snap install helm --classic
-          curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/kubectl
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+      - name: Setup Kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
       - name: Validate Shell Scripts
         run: |
           for script in scripts/*.sh; do
