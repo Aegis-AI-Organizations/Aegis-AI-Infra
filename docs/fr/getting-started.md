@@ -28,7 +28,7 @@ All sensitive variables (DB passwords, tokens, etc.) are managed locally via a `
 cp .env.example .env
 ```
 
-Then open `.env` and fill in any missing values (e.g. your `GHCR_TOKEN`). The pre-alpha defaults are already pre-filled for local use.
+Then open `.env` and fill in any missing values (e.g. your `GHCR_TOKEN`). The MVP defaults are already pre-filled for local use.
 
 ```bash
 # Load variables in your current terminal session
@@ -47,6 +47,7 @@ echo $POSTGRES_USER
 | `POSTGRES_DB` | Database name | `aegis_db` |
 | `POSTGRES_USER` | DB username | `aegis_admin` |
 | `POSTGRES_PASSWORD` | DB password | `password123` |
+| `JWT_SECRET` | Secret key for JWT signing | `mvp-secret-key-12345` |
 | `TEMPORAL_HOST` | Temporal host (after port-forward) | `localhost` |
 | `TEMPORAL_PORT` | Temporal gRPC port | `7233` |
 | `ARGOCD_SERVER` | ArgoCD server address | `localhost:8080` |
@@ -95,7 +96,7 @@ kubectl config current-context
 Once your cluster is ready, from the **repository root**:
 
 ```bash
-./scripts/setup-env.sh pre-alpha
+./scripts/setup-env.sh mvp
 ```
 
 This script will automatically:
@@ -103,7 +104,7 @@ This script will automatically:
 2. Install **Nginx Ingress Controller**
 3. Install **ArgoCD** (latest stable version)
 4. Wait for the ArgoCD server to be available
-5. Deploy the **App of Apps** (`root-app-pre-alpha.yaml`)
+5. Deploy the **App of Apps** (`root-app-mvp.yaml`)
 
 > ⏳ The first run may take **5 to 10 minutes** while ArgoCD pulls all images.
 
@@ -134,7 +135,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 ## 🌐 Accessing Services (Ingress)
 
-The **api-gateway** is exposed via an Ingress on the hostname `api.aegis.pre-alpha.local`.
+The **api-gateway** is exposed via an Ingress on the hostname `api.aegis.mvp.local`.
 
 To resolve this hostname locally, add the following entry to your `/etc/hosts` file:
 
@@ -146,11 +147,11 @@ kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.
 Then edit `/etc/hosts` (requires `sudo`):
 
 ```
-# Aegis AI - Pre Alpha local
-127.0.0.1   api.aegis.pre-alpha.local
+# Aegis AI - MVP local
+127.0.0.1   api.aegis.mvp.local
 ```
 
-The API Gateway is then accessible at: **http://api.aegis.pre-alpha.local**
+The API Gateway is then accessible at: **http://api.aegis.mvp.local**
 
 > 💡 On **Docker Desktop**, the LoadBalancer IP is typically `127.0.0.1`. On `kind`, use `kubectl port-forward` instead.
 
@@ -163,10 +164,10 @@ The API Gateway is then accessible at: **http://api.aegis.pre-alpha.local**
 PostgreSQL runs in the `aegis-system` namespace. To access it from your machine:
 
 ```bash
-kubectl port-forward svc/aegis-postgres-pre-alpha-postgresql -n aegis-system 5432:5432
+kubectl port-forward svc/aegis-postgres-mvp-postgresql -n aegis-system 5432:5432
 ```
 
-**Credentials (pre-alpha dev only):**
+**Credentials (MVP dev only):**
 - Host: `localhost:5432`
 - Database: `aegis_db`
 - Username: `aegis_admin`
@@ -179,7 +180,7 @@ kubectl port-forward svc/aegis-postgres-pre-alpha-postgresql -n aegis-system 543
 To access the Temporal web interface:
 
 ```bash
-kubectl port-forward svc/aegis-temporal-pre-alpha-web -n aegis-system 8081:8080
+kubectl port-forward svc/aegis-temporal-mvp-web -n aegis-system 8081:8080
 ```
 
 Then open: **[http://localhost:8081](http://localhost:8081)**
@@ -199,7 +200,7 @@ kubectl get applications -n argocd
 kubectl get events -n aegis-system --sort-by='.lastTimestamp'
 
 # Stream logs for a specific service (e.g. brain)
-kubectl logs -n aegis-system -l app=brain-pre-alpha --tail=100 -f
+kubectl logs -n aegis-system -l app=brain-mvp --tail=100 -f
 ```
 
 ---
@@ -209,13 +210,13 @@ kubectl logs -n aegis-system -l app=brain-pre-alpha --tail=100 -f
 To **stop** the pods without destroying the ArgoCD config (ideal for freeing RAM):
 
 ```bash
-./scripts/stop-env.sh pre-alpha
+./scripts/stop-env.sh mvp
 ```
 
 To **restart** after a stop:
 
 ```bash
-./scripts/setup-env.sh pre-alpha
+./scripts/setup-env.sh mvp
 ```
 
 ---
@@ -225,10 +226,10 @@ To **restart** after a stop:
 To **completely remove** everything (namespaces, pods, volumes, ArgoCD config):
 
 ```bash
-./scripts/teardown-env.sh pre-alpha
+./scripts/teardown-env.sh mvp
 ```
 
-> ⚠️ This command is **irreversible**. All local PostgreSQL data will be lost (persistence is disabled in pre-alpha).
+> ⚠️ This command is **irreversible**. All local PostgreSQL data will be lost (persistence is disabled in MVP).
 
 ---
 
@@ -269,7 +270,7 @@ All commits must follow this format:
 Helm overrides for each service live in:
 
 ```
-kubernetes/envs/pre-alpha/<service>/values.yaml
+kubernetes/envs/mvp/<service>/values.yaml
 ```
 
 After a change is pushed, ArgoCD detects it automatically (auto-sync is enabled) and redeploys the affected service.

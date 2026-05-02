@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) UNIQUE NOT NULL,
     logo_url VARCHAR(255),
+    deployment_token VARCHAR(255) UNIQUE,
     owner_id UUID, -- Circular reference handled via ALTER TABLE below
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -69,7 +70,10 @@ CREATE TABLE IF NOT EXISTS licenses (
 
 -- 4. Identity & Access Management
 DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('superadmin', 'owner', 'operator', 'viewer');
+    CREATE TYPE user_role AS ENUM (
+        'superadmin', 'admin', 'billing_aegis', 'technicien', 'support', 'commercial',
+        'owner', 'billing_client', 'operateur', 'viewer'
+    );
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -109,6 +113,14 @@ DO $$ BEGIN
     ) THEN
         ALTER TABLE companies ADD CONSTRAINT fk_companies_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL;
     END IF;
+
+    -- Migration: Ensure deployment_token exists on 'companies'
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='companies' AND column_name='deployment_token' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE companies ADD COLUMN deployment_token VARCHAR(255) UNIQUE;
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -128,3 +140,45 @@ CREATE INDEX IF NOT EXISTS idx_vulnerabilities_scan_id ON vulnerabilities (scan_
 CREATE INDEX IF NOT EXISTS idx_evidences_vulnerability_id ON evidences (vulnerability_id);
 CREATE INDEX IF NOT EXISTS idx_users_company_id ON users (company_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+
+ -- 6. Audit Trail
+ CREATE TABLE IF NOT EXISTS audit_logs (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     user_id UUID NOT NULL,
+     company_id UUID,
+     action VARCHAR(100) NOT NULL,
+     target_type VARCHAR(50),
+     target_id VARCHAR(100),
+     details JSONB,
+     ip_address VARCHAR(45),
+     timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+ );
+
+ CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs (user_id);
+ CREATE INDEX IF NOT EXISTS idx_audit_logs_company_id ON audit_logs (company_id);
+ CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs (timestamp);
+
+-- 7. Billing System (Licences & Tokens)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='org_size') THEN
+        ALTER TABLE companies ADD COLUMN org_size VARCHAR(50);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='org_type') THEN
+        ALTER TABLE companies ADD COLUMN org_type VARCHAR(100);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='token_balance') THEN
+        ALTER TABLE companies ADD COLUMN token_balance BIGINT DEFAULT 0 NOT NULL;
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS token_ledger (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    amount BIGINT NOT NULL,
+    reason VARCHAR(255) NOT NULL,
+    scan_id UUID REFERENCES scans(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_token_ledger_company_id ON token_ledger(company_id);
+CREATE INDEX IF NOT EXISTS idx_token_ledger_created_at ON token_ledger(created_at);

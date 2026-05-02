@@ -55,6 +55,7 @@ graph TD
 
 ```
 Aegis-AI-Infra/
+├── local-dev/                # Recommended Local Development Stack (Docker Compose)
 ├── kubernetes/
 │   ├── bootstrap/
 │   │   └── root-app-mvp.yaml         # ArgoCD Root App for MVP
@@ -79,7 +80,35 @@ Aegis-AI-Infra/
 
 ---
 
-## 🚀 Quick Start (Local)
+## 🚀 Quick Start (Local Development)
+
+The easiest way to start developing on Aegis AI is using **Docker Compose**. This setup provides hot-reloading for the Gateway, Brain, and Dashboard.
+
+### Recommended: Docker Compose
+
+1. **Clone Repositories**: Ensure all microservices are in the same parent directory:
+   ```text
+   parent-directory/
+   ├── Aegis-AI-Infra/
+   ├── Aegis-AI-Brain/
+   ├── Aegis-AI-Api-Gateway/
+   └── Aegis-AI-Dashboard/
+   ```
+
+2. **Launch Stack**:
+   ```bash
+   cd Aegis-AI-Infra/local-dev
+   cp .env.example .env
+   docker compose up -d
+   ```
+
+For detailed instructions and credentials, see [local-dev/README.md](local-dev/README.md).
+
+---
+
+## 🏗️ Advanced Local Setup (Kubernetes)
+
+If you need to test Kubernetes-specific features (ArgoCD, KEDA, mTLS), follow these steps:
 
 ### Prerequisites
 
@@ -90,16 +119,12 @@ Aegis-AI-Infra/
 ### Launch the `mvp` environment
 
 ```bash
-# 1. Clone & Setup
-git clone https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
-cd Aegis-AI-Infra
-
-# 2. Run the full setup
+# 1. Run the full setup from root
 ./scripts/setup-env.sh mvp
 
-# 3. Access the ArgoCD UI
+# 2. Access the ArgoCD UI
 kubectl port-forward svc/argocd-server -n argocd 8080:443
-# → https://localhost:8080  (user: admin, password below)
+# → https://localhost:8080  (user: admin)
 ```
 
 Retrieve the ArgoCD admin password:

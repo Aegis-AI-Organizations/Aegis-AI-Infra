@@ -2,22 +2,23 @@
 -- Initializes local developer environment.
 
 WITH upsert_company AS (
-  INSERT INTO companies (name, logo_url, is_active)
-  VALUES ('Aegis AI', 'https://aegis-ai.com/logo.png', true)
+  INSERT INTO companies (name, logo_url, deployment_token, is_active)
+  VALUES ('Aegis AI', 'https://aegis-ai.com/logo.png', 'ag_local_dev_token_32chars_seed', true)
   ON CONFLICT (name) DO UPDATE SET
     logo_url = EXCLUDED.logo_url,
+    deployment_token = COALESCE(companies.deployment_token, EXCLUDED.deployment_token),
     is_active = EXCLUDED.is_active
   RETURNING id
 ), upsert_user AS (
   INSERT INTO users (company_id, name, email, password_hash, role, is_active)
-  VALUES (
+  SELECT
     (SELECT id FROM upsert_company),
     INITCAP(split_part(:'AEGIS_SEED_USER_EMAIL', '@', 1)),
     :'AEGIS_SEED_USER_EMAIL',
     crypt(:'AEGIS_SEED_USER_PASSWORD', gen_salt('bf', 10)),
     'superadmin',
     true
-  )
+  WHERE NOT EXISTS (SELECT 1 FROM users WHERE role = 'superadmin')
   ON CONFLICT (email) DO UPDATE SET
     password_hash = CASE
       WHEN users.password_hash = crypt(:'AEGIS_SEED_USER_PASSWORD', users.password_hash)
