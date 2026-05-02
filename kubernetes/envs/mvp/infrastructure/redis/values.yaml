@@ -1,0 +1,24 @@
+global:
+  imageRegistry: public.ecr.aws
+
+architecture: standalone
+
+auth:
+  enabled: true
+  existingSecret: "aegis-env"
+  existingSecretPasswordKey: "REDIS_PASSWORD"
+
+master:
+  persistence:
+    enabled: true
+    size: 8Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "250m"
+
+replica:
+  replicaCount: 0 # Standalone for MVP

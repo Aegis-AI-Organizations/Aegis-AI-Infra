@@ -12,5 +12,7 @@ resources:
   - infrastructure/db-init/application.yaml
   - infrastructure/postgres/application.yaml
   - infrastructure/temporal/application.yaml
+  - infrastructure/minio/application.yaml
+  - infrastructure/redis/application.yaml
   - network-policies/application.yaml
   - pentest-worker/application.yaml
