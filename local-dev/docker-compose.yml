@@ -145,10 +145,10 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
+      set -e;
       mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
       mc mb local/aegis-telemetry || true;
       mc policy set public local/aegis-telemetry;
-      exit 0;
       "
 
   redis:
