@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: aegis-temporal-mvp
+  name: aegis-redis-mvp
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   sources:
-    - repoURL: https://temporalio.github.io/helm-charts
-      chart: temporal
-      targetRevision: 0.74.0
+    - repoURL: https://charts.bitnami.com/bitnami
+      chart: redis
+      targetRevision: 19.0.0
       helm:
         valueFiles:
-          - $values/kubernetes/envs/mvp/infrastructure/temporal/temporal-values.yaml
+          - $values/kubernetes/envs/mvp/infrastructure/redis/values.yaml
     - repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
       targetRevision: main
       ref: values

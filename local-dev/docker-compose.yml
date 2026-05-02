@@ -16,7 +16,8 @@ services:
       - ../kubernetes/envs/mvp/infrastructure/db-init/manifests/init.sql:/docker-entrypoint-initdb.d/10-init.sql
       - ../kubernetes/envs/mvp/infrastructure/db-init/manifests/seed.sql:/tmp/seed.sql
     command: >
-      sh -c "cp /tmp/seed.sql /docker-entrypoint-initdb.d/20-seed.sql && 
+      sh -c "cp /tmp/seed.sql /docker-entrypoint-initdb.d/20-seed.sql &&
+             chmod +r /docker-entrypoint-initdb.d/20-seed.sql &&
              sed -i \"s/:'AEGIS_SEED_USER_EMAIL'/'$${AEGIS_SEED_USER_EMAIL}'/g\" /docker-entrypoint-initdb.d/20-seed.sql &&
              sed -i \"s/:'AEGIS_SEED_USER_PASSWORD'/'$${AEGIS_SEED_USER_PASSWORD}'/g\" /docker-entrypoint-initdb.d/20-seed.sql &&
              docker-entrypoint.sh postgres"
@@ -44,14 +45,14 @@ services:
 
   # --- Application Services ---
   brain:
-    image: public.ecr.aws/docker/library/python:3.11-slim
+    image: python:3.11-slim
     container_name: aegis-brain
     working_dir: /app
     restart: on-failure
     command: >
-      sh -c "apt-get update && apt-get install -y git build-essential libpq-dev && 
-             pip install uv && 
-             uv sync --no-dev && 
+      sh -c "apt-get update && apt-get install -y git build-essential libpq-dev &&
+             pip install uv &&
+             uv sync --no-dev &&
              uv run python src/main.py"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
@@ -75,12 +76,12 @@ services:
         condition: service_started
 
   gateway:
-    image: public.ecr.aws/docker/library/golang:1.24-alpine
+    image: golang:1.24-alpine
     container_name: aegis-gateway
     working_dir: /app
     restart: on-failure
     command: >
-      sh -c "apk add --no-cache git build-base && 
+      sh -c "apk add --no-cache git build-base &&
              GOTOOLCHAIN=local+auto go run cmd/api/main.go"
     environment:
       - PORT=${PORT}
@@ -102,12 +103,12 @@ services:
         condition: service_started
 
   dashboard:
-    image: public.ecr.aws/docker/library/node:20
+    image: node:20
     container_name: aegis-dashboard
     working_dir: /app
     command: >
-      sh -c "npm install --ignore-scripts && 
-             npx panda codegen && 
+      sh -c "npm install --ignore-scripts &&
+             npx panda codegen &&
              npm run dev"
     environment:
       - VITE_API_URL=${VITE_API_URL}
@@ -118,5 +119,55 @@ services:
     depends_on:
       - gateway
 
+  minio:
+    image: minio/minio:latest
+    container_name: aegis-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - aegis-minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: aegis-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      set -e;
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb local/aegis-telemetry || true;
+      mc policy set public local/aegis-telemetry;
+      "
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: aegis-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - aegis-redis-data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   aegis-db-data:
+  aegis-minio-data:
+  aegis-redis-data:
