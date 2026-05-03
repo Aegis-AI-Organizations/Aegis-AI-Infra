@@ -1,82 +1,88 @@
-# Aegis AI - Local Development Stack
+# Aegis AI - Local Development Environment 🐼🛡️
 
-This directory contains the Docker Compose configuration for running the full Aegis AI microservices stack locally. This setup is intended for **development purposes only** and provides hot-reloading for the Gateway, Brain, and Dashboard services.
+Ce répertoire contient la configuration pour lancer l'écosystème complet Aegis AI sur votre machine locale via Docker Compose.
 
-## Prerequisites
+## 🏗️ Architecture de Routage
 
-- **Docker & Docker Compose** installed.
-- **Microservices Cloned**: Ensure the following repositories are cloned in the same parent directory as `Aegis-AI-Infra`:
-  - `Aegis-AI-Brain`
-  - `Aegis-AI-Api-Gateway`
-  - `Aegis-AI-Dashboard`
-  - `Aegis-AI-Proto` (required for code generation)
+L'environnement local simule fidèlement une infrastructure Kubernetes avec un Ingress (Nginx) servant de point d'entrée unique.
 
-Expected folder structure:
-```text
-parent-directory/
-├── Aegis-AI-Infra/
-├── Aegis-AI-Brain/
-├── Aegis-AI-Api-Gateway/
-├── Aegis-AI-Dashboard/
-└── Aegis-AI-Proto/
+```mermaid
+graph TD
+    User([Utilisateur/Agent]) -- Port 80 --> Proxy[Aegis Proxy - Nginx]
+    Proxy -- /api/* --> Gateway[API Gateway - Go]
+    Proxy -- / (default) --> Dashboard[Dashboard - Vite]
+    Gateway -- gRPC --> Brain[Brain - Python]
+    Brain -- SQL --> DB[(PostgreSQL)]
+    Brain -- S3 --> MinIO[(MinIO Storage)]
+    Gateway -- Cache --> Redis[(Redis)]
 ```
 
-## Setup Instructions
+### Points d'entrée
+- **Dashboard UI** : [http://localhost](http://localhost)
+- **API Base URL** : [http://localhost/api](http://localhost/api)
+- **MinIO Console** : [http://localhost:9001](http://localhost:9001)
+- **Temporal UI** : [http://localhost:8233](http://localhost:8233)
 
-1.  **Prepare Environment Variables**:
-    Copy the example environment file:
-    ```bash
-    cp .env.example .env
-    ```
+---
 
-2.  **Start the Stack**:
-    Run the following command from this directory:
+## 🚀 Démarrage Rapide
+
+1.  **Configuration** : Copiez le fichier `.env.example` en `.env` et ajustez les secrets si nécessaire.
+2.  **Lancement** :
     ```bash
     docker compose up -d
     ```
+3.  **Vérification** : Accédez à `http://localhost`. Vous devriez voir la page de connexion.
 
-3.  **Access the Services**:
-    - **Aegis AI Dashboard**: [http://localhost](http://localhost) (via Proxy)
-    - **Direct Dashboard (Vite)**: [http://localhost:3000](http://localhost:3000)
-    - **API Gateway**: [http://localhost/api](http://localhost/api) (via Proxy) or [http://localhost:8080](http://localhost:8080) (Direct)
-    - **Temporal UI**: [http://localhost:8233](http://localhost:8233)
-    - **MinIO Console**: [http://localhost:9001](http://localhost:9001)
+---
 
-## Architecture Parity
+## 🤖 Guide de test des Agents
 
-To ensure seamless transition between local development and Kubernetes, we use an **Nginx Reverse Proxy** (`aegis-proxy`) that mimics an Ingress Controller:
+Les agents utilisent un **Deployment Token** pour s'authentifier. Voici comment tester le flux complet avec `curl`.
 
-- Requests to `http://localhost/api/*` are routed to the **Gateway**.
-- All other requests are routed to the **Dashboard**.
-- The Dashboard uses a relative `VITE_API_URL=/api` to ensure compatibility with both local and production environments without code changes.
-
-## Default Credentials
-
-The database is pre-seeded with a superadmin user:
-- **Email**: `admin@aegis-ai.com`
-- **Password**: `admin_password`
-
-## Development Workflow
-
-### Hot-Reloading
-- **Dashboard**: Fully automated via Vite.
-- **Gateway & Brain**: Files are bind-mounted. To apply changes, restart the specific service:
-  ```bash
-  docker compose restart gateway
-  docker compose restart brain
-  ```
-
-### Protobuf Synchronization
-When modifying gRPC definitions in `Aegis-AI-Proto`, you must generate and synchronize the stubs in the respective services.
-
-## Troubleshooting
-
-### Resetting the Database & Infrastructure
-To clear all data and re-run initialization:
+### 1. Enregistrement de l'Agent
+Remplacez `TOKEN` par le token généré sur le Dashboard.
 ```bash
-docker compose down -v
-docker compose up -d
+curl -X POST http://localhost/api/agents/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "TOKEN_DE_DEPLOYMENT",
+    "name": "Agent-Test-Local"
+  }'
+```
+> Retourne un `agent_id` (ex: `dc91b2f3...`)
+
+### 2. Mise à jour du Statut
+L'authentification se fait via le header `Authorization: Bearer <TOKEN>`.
+```bash
+curl -X POST http://localhost/api/agents/<AGENT_ID>/status \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TOKEN_DE_DEPLOYMENT" \
+  -d '{"status": "RUNNING"}'
 ```
 
-### 404 Errors on /api
-Ensure the `aegis-proxy` container is running and that your `.env` has `VITE_API_URL=/api`. If you access via `localhost:3000`, the browser might fail on relative API calls; always use `http://localhost`.
+### 3. Demande de lien d'Upload
+```bash
+curl -X GET "http://localhost/api/agents/<AGENT_ID>/upload-url?filename=logs.zip" \
+  -H "Authorization: Bearer TOKEN_DE_DEPLOYMENT"
+```
+
+---
+
+## ⚡ Optimisations & Cache
+
+### Vérification des Tokens (Redis)
+Pour maximiser les performances, l'API Gateway met en cache les résultats de vérification des tokens de déploiement dans **Redis**.
+- **TTL du cache** : 30 minutes.
+- **Flux** : Si un agent envoie 1000 requêtes, seul le premier appel interroge le Brain (DB) ; les 999 suivants sont validés instantanément via Redis.
+
+---
+
+## 🛠️ Dépannage (Troubleshooting)
+
+- **404 sur l'API** : Vérifiez que le conteneur `aegis-gateway` est bien lancé et que les routes ont le préfixe `/api`.
+- **Erreur de connexion MinIO** : Si vous testez depuis l'hôte, ajoutez `127.0.0.1 minio` à votre fichier `/etc/hosts`.
+- **Base de données vide** : Le Brain synchronise automatiquement les tables au démarrage. Si besoin, relancez le Brain : `docker compose restart brain`.
+
+---
+© 2026 Aegis AI. Tous droits réservés.
