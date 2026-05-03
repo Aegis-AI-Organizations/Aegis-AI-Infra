@@ -153,10 +153,6 @@ networkPolicy:
       ports:
         - port: 9000
           protocol: TCP
-            app.kubernetes.io/component: frontend
-      ports:
-        - port: 7233
-          protocol: TCP
     - toEntities:
         - kube-apiserver
       ports:
