@@ -143,6 +143,16 @@ networkPolicy:
         - matchLabels:
             app.kubernetes.io/name: temporal
             app.kubernetes.io/instance: aegis-temporal-mvp
+      ports:
+        - port: 7233
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: minio
+            app.kubernetes.io/instance: aegis-minio-mvp
+      ports:
+        - port: 9000
+          protocol: TCP
             app.kubernetes.io/component: frontend
       ports:
         - port: 7233
