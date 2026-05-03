@@ -61,6 +61,22 @@ env:
     value: "/etc/brain/certs/tls.crt"
   - name: BRAIN_TLS_SERVER_KEY
     value: "/etc/brain/certs/tls.key"
+  - name: MINIO_ENDPOINT
+    value: "aegis-minio-mvp:9000"
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_USER
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_PASSWORD
+  - name: MINIO_SECURE
+    value: "false"
+  - name: MINIO_INGEST_BUCKET
+    value: "aegis-ingest"
 
 volumeMounts:
   - name: temporal-tls
@@ -135,4 +151,11 @@ networkPolicy:
         - kube-apiserver
       ports:
         - port: 443
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: minio
+            app.kubernetes.io/instance: aegis-minio-mvp
+      ports:
+        - port: 9000
           protocol: TCP
