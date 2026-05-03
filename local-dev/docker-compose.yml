@@ -65,6 +65,13 @@ services:
       - GRPC_PORT=${GRPC_PORT}
       - DEBUG=true
       - ENV=dev
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_SECURE=${MINIO_SECURE}
+      - MINIO_INGEST_BUCKET=${MINIO_INGEST_BUCKET}
+      - REDIS_HOST=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - ../../Aegis-AI-Brain:/app
     ports:
