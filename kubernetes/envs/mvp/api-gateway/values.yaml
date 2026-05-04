@@ -85,6 +85,13 @@ env:
     value: "/etc/brain/certs/tls.key"
   - name: BRAIN_TLS_SERVER_NAME
     value: "brain-mvp.aegis-system.svc.cluster.local"
+  - name: REDIS_ADDR
+    value: "aegis-redis-mvp-master.aegis-system.svc.cluster.local:6379"
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: REDIS_PASSWORD
 
 volumeMounts:
   - name: temporal-tls
@@ -148,4 +155,11 @@ networkPolicy:
             app: brain-mvp
       ports:
         - port: 50051
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: redis
+            app.kubernetes.io/instance: aegis-redis-mvp
+      ports:
+        - port: 6379
           protocol: TCP

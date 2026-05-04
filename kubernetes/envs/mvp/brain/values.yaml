@@ -77,6 +77,13 @@ env:
     value: "false"
   - name: MINIO_INGEST_BUCKET
     value: "aegis-ingest"
+  - name: REDIS_HOST
+    value: "aegis-redis-mvp-master.aegis-system.svc.cluster.local:6379"
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: REDIS_PASSWORD
 
 volumeMounts:
   - name: temporal-tls
@@ -164,4 +171,11 @@ networkPolicy:
             app.kubernetes.io/instance: aegis-minio-mvp
       ports:
         - port: 9000
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: redis
+            app.kubernetes.io/instance: aegis-redis-mvp
+      ports:
+        - port: 6379
           protocol: TCP
