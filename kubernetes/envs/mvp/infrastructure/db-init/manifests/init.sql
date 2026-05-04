@@ -180,5 +180,19 @@ CREATE TABLE IF NOT EXISTS token_ledger (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
+-- 8. Agents & Onboarding
+CREATE TABLE IF NOT EXISTS agents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'IDLE',
+    token_hash VARCHAR(255),
+    last_seen TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_agents_company_id ON agents (company_id);
+CREATE INDEX IF NOT EXISTS idx_agents_status ON agents (status);
+
 CREATE INDEX IF NOT EXISTS idx_token_ledger_company_id ON token_ledger(company_id);
 CREATE INDEX IF NOT EXISTS idx_token_ledger_created_at ON token_ledger(created_at);
