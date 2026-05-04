@@ -199,7 +199,8 @@ CREATE TABLE IF NOT EXISTS agents (
     status VARCHAR(50) DEFAULT 'IDLE',
     token_hash VARCHAR(255),
     last_seen TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_agents_company_id ON agents (company_id);
