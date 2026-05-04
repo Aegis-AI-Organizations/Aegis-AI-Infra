@@ -22,7 +22,7 @@ services:
              sed -i \"s/:'AEGIS_SEED_USER_PASSWORD'/'$${AEGIS_SEED_USER_PASSWORD}'/g\" /docker-entrypoint-initdb.d/20-seed.sql &&
              docker-entrypoint.sh postgres"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -99,6 +99,8 @@ services:
       - BRAIN_GRPC_ADDR=brain:50051
       - JWT_SECRET=${JWT_SECRET}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
       - "8080:8080"
     volumes:
@@ -150,7 +152,7 @@ services:
       - aegis-minio-data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -162,26 +164,20 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      /bin/sh -c "
-      set -e;
-      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
-      mc mb local/aegis-telemetry || true;
-      mc policy set public local/aegis-telemetry;
-      mc mb local/aegis-ingest || true;
-      "
+      /bin/sh -c " set -e; mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; mc mb local/aegis-telemetry || true; mc policy set public local/aegis-telemetry; mc mb local/aegis-ingest || true; "
 
   redis:
-    image: redis:7.2-alpine
+    image: redis:7-alpine
     container_name: aegis-redis
+    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}", "--notify-keyspace-events", "Ex" ]
     ports:
       - "6379:6379"
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - aegis-redis-data:/data
-    command: redis-server --requirepass ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 10

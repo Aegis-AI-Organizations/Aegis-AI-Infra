@@ -3,6 +3,9 @@ global:
 
 architecture: standalone
 
+commonConfiguration: |-
+  notify-keyspace-events Ex
+
 auth:
   enabled: true
   existingSecret: "aegis-env"
