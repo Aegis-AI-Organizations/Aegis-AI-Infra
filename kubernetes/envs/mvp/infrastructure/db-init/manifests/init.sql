@@ -70,12 +70,15 @@ CREATE TABLE IF NOT EXISTS licenses (
 
 -- 4. Identity & Access Management
 DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM (
-        'superadmin', 'admin', 'billing_aegis', 'technicien', 'support', 'commercial',
-        'owner', 'billing_client', 'operateur', 'viewer'
-    );
-EXCEPTION
-    WHEN duplicate_object THEN null;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM (
+            'superadmin', 'admin', 'billing_aegis', 'technicien', 'support', 'commercial',
+            'owner', 'billing_client', 'operateur', 'viewer'
+        );
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_activation_status') THEN
+        CREATE TYPE user_activation_status AS ENUM ('active', 'pending_activation');
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -86,6 +89,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'viewer',
     is_active BOOLEAN DEFAULT true,
+    activation_status user_activation_status NOT NULL DEFAULT 'active',
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -103,6 +107,13 @@ DO $$ BEGIN
         WHERE table_name='users' AND column_name='avatar_url' AND table_schema = 'public'
     ) THEN
         ALTER TABLE users ADD COLUMN avatar_url TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='users' AND column_name='activation_status' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE users ADD COLUMN activation_status user_activation_status NOT NULL DEFAULT 'active';
     END IF;
 END $$;
 
@@ -179,6 +190,21 @@ CREATE TABLE IF NOT EXISTS token_ledger (
     scan_id UUID REFERENCES scans(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+-- 8. Agents & Onboarding
+CREATE TABLE IF NOT EXISTS agents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'IDLE',
+    token_hash VARCHAR(255),
+    last_seen TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_agents_company_id ON agents (company_id);
+CREATE INDEX IF NOT EXISTS idx_agents_status ON agents (status);
 
 CREATE INDEX IF NOT EXISTS idx_token_ledger_company_id ON token_ledger(company_id);
 CREATE INDEX IF NOT EXISTS idx_token_ledger_created_at ON token_ledger(created_at);

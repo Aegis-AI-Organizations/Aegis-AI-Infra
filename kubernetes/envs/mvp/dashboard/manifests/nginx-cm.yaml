@@ -15,7 +15,7 @@ data:
 
         # Proxy toutes les requêtes /api/* vers l'API Gateway interne
         location ^~ /api/ {
-            proxy_pass INTERNAL_API_URL_PLACEHOLDER;
+            proxy_pass http://api-gateway-mvp.aegis-system.svc.cluster.local:8080;
             proxy_set_header Host api-gateway-mvp;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

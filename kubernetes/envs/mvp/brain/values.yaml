@@ -61,6 +61,29 @@ env:
     value: "/etc/brain/certs/tls.crt"
   - name: BRAIN_TLS_SERVER_KEY
     value: "/etc/brain/certs/tls.key"
+  - name: MINIO_ENDPOINT
+    value: "aegis-minio-mvp:9000"
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_USER
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_PASSWORD
+  - name: MINIO_SECURE
+    value: "false"
+  - name: MINIO_INGEST_BUCKET
+    value: "aegis-ingest"
+  - name: REDIS_HOST
+    value: "aegis-redis-mvp-master.aegis-system.svc.cluster.local:6379"
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: REDIS_PASSWORD
 
 volumeMounts:
   - name: temporal-tls
@@ -127,12 +150,32 @@ networkPolicy:
         - matchLabels:
             app.kubernetes.io/name: temporal
             app.kubernetes.io/instance: aegis-temporal-mvp
-            app.kubernetes.io/component: frontend
       ports:
         - port: 7233
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: minio
+            app.kubernetes.io/instance: aegis-minio-mvp
+      ports:
+        - port: 9000
           protocol: TCP
     - toEntities:
         - kube-apiserver
       ports:
         - port: 443
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: minio
+            app.kubernetes.io/instance: aegis-minio-mvp
+      ports:
+        - port: 9000
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: redis
+            app.kubernetes.io/instance: aegis-redis-mvp
+      ports:
+        - port: 6379
           protocol: TCP

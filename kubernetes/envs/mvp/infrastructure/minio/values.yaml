@@ -1,6 +1,6 @@
 global:
   imageRegistry: public.ecr.aws
-  storageClass: "standard" # Adjust based on cloud provider
+  storageClass: "local-path" # Use local-path for MVP dev cluster
 
 auth:
   existingSecret: "aegis-env"
