@@ -3,7 +3,12 @@
 
 WITH upsert_company AS (
   INSERT INTO companies (name, logo_url, deployment_token, is_active)
-  VALUES ('Aegis AI', 'https://aegis-ai.com/logo.png', 'ag_local_dev_token_32chars_seed', true)
+  VALUES (
+    'Aegis AI',
+    'https://aegis-ai.com/logo.png',
+    encode(digest('ag_local_dev_token_32chars_seed', 'sha256'), 'hex'),
+    true
+  )
   ON CONFLICT (name) DO UPDATE SET
     logo_url = EXCLUDED.logo_url,
     deployment_token = COALESCE(companies.deployment_token, EXCLUDED.deployment_token),

@@ -134,6 +134,14 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+UPDATE companies
+SET deployment_token = encode(digest(deployment_token, 'sha256'), 'hex')
+WHERE deployment_token IS NOT NULL
+  AND deployment_token LIKE 'ag_%';
+
+COMMENT ON COLUMN companies.deployment_token IS
+    'SHA-256 hash of the raw ag_ deployment token. The raw token is returned only once during onboarding.';
+
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -203,8 +211,32 @@ CREATE TABLE IF NOT EXISTS agents (
     UNIQUE(company_id, name)
 );
 
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='agents' AND column_name='token_hash' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE agents ADD COLUMN token_hash VARCHAR(255);
+    END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_agents_company_id ON agents (company_id);
 CREATE INDEX IF NOT EXISTS idx_agents_status ON agents (status);
+
+CREATE TABLE IF NOT EXISTS onboarding_invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_onboarding_invitations_user_id
+    ON onboarding_invitations(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_onboarding_invitations_expires_at
+    ON onboarding_invitations(expires_at);
 
 CREATE INDEX IF NOT EXISTS idx_token_ledger_company_id ON token_ledger(company_id);
 CREATE INDEX IF NOT EXISTS idx_token_ledger_created_at ON token_ledger(created_at);
