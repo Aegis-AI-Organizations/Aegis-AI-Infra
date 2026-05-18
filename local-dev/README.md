@@ -4,13 +4,15 @@ Ce répertoire contient la configuration pour lancer l'écosystème complet Aegi
 
 ## 🏗️ Architecture de Routage
 
-L'environnement local simule fidèlement une infrastructure Kubernetes avec un Ingress (Nginx) servant de point d'entrée unique.
+L'environnement local expose le Dashboard en direct via Vite sur le port `3000` et l'API Gateway sur le port `8080`. Le proxy Nginx reste disponible sur le port `80` pour tester un routage type ingress, mais le parcours local-dev recommandé utilise `localhost:3000`.
 
 ```mermaid
 graph TD
-    User([Utilisateur/Agent]) -- Port 80 --> Proxy[Aegis Proxy - Nginx]
-    Proxy -- /api/* --> Gateway[API Gateway - Go]
-    Proxy -- / (default) --> Dashboard[Dashboard - Vite]
+    User([Utilisateur]) -- Port 3000 --> Dashboard[Dashboard - Vite]
+    Dashboard -- HTTP /api --> Gateway[API Gateway - Go]
+    Agent([Agent]) -- Port 8080 --> Gateway
+    Proxy[Aegis Proxy - Nginx] -- Optionnel /api/* --> Gateway
+    Proxy -- Optionnel / --> Dashboard
     Gateway -- gRPC --> Brain[Brain - Python]
     Brain -- SQL --> DB[(PostgreSQL)]
     Brain -- S3 --> MinIO[(MinIO Storage)]
@@ -18,8 +20,10 @@ graph TD
 ```
 
 ### Points d'entrée
-- **Dashboard UI** : [http://localhost](http://localhost)
-- **API Base URL** : [http://localhost/api](http://localhost/api)
+- **Dashboard UI** : [http://localhost:3000](http://localhost:3000)
+- **API Base URL** : [http://localhost:8080/api](http://localhost:8080/api)
+- **Proxy optionnel** : [http://localhost](http://localhost)
+- **Mailpit UI** : [http://localhost:8025](http://localhost:8025)
 - **MinIO Console** : [http://localhost:9001](http://localhost:9001)
 - **Temporal UI** : [http://localhost:8233](http://localhost:8233)
 
@@ -32,7 +36,23 @@ graph TD
     ```bash
     docker compose up -d
     ```
-3.  **Vérification** : Accédez à `http://localhost`. Vous devriez voir la page de connexion.
+3.  **Vérification** : Accédez à `http://localhost:3000`. Vous devriez voir la page de connexion.
+
+---
+
+## 📨 Test du flow d'onboarding
+
+Mailpit capture les emails d'invitation envoyés par le Brain en local.
+
+1. Connectez-vous au Dashboard avec le compte seed :
+   - Email : `admin@aegis-ai.com`
+   - Mot de passe : `admin_password`
+2. Depuis la page utilisateurs/entreprises, créez une nouvelle entreprise via le formulaire d'onboarding.
+3. Ouvrez [http://localhost:8025](http://localhost:8025), puis ouvrez l'email reçu par l'owner.
+4. Cliquez sur le lien `http://localhost:3000/setup-password?token=...`.
+5. Définissez le mot de passe du owner.
+6. Vérifiez que le token agent `ag_...` est affiché une seule fois après activation.
+7. Confirmez l'accès au Dashboard avec le nouveau compte owner.
 
 ---
 
@@ -43,7 +63,7 @@ Les agents utilisent un **Deployment Token** pour s'authentifier. Voici comment 
 ### 1. Enregistrement de l'Agent
 Remplacez `TOKEN` par le token généré sur le Dashboard.
 ```bash
-curl -X POST http://localhost/api/agents/register \
+curl -X POST http://localhost:8080/api/agents/register \
   -H "Content-Type: application/json" \
   -d '{
     "token": "TOKEN_DE_DEPLOYMENT",
@@ -55,7 +75,7 @@ curl -X POST http://localhost/api/agents/register \
 ### 2. Mise à jour du Statut
 L'authentification se fait via le header `Authorization: Bearer <TOKEN>`.
 ```bash
-curl -X POST http://localhost/api/agents/<AGENT_ID>/status \
+curl -X POST http://localhost:8080/api/agents/<AGENT_ID>/status \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer TOKEN_DE_DEPLOYMENT" \
   -d '{"status": "RUNNING"}'
@@ -63,7 +83,7 @@ curl -X POST http://localhost/api/agents/<AGENT_ID>/status \
 
 ### 3. Demande de lien d'Upload
 ```bash
-curl -X GET "http://localhost/api/agents/<AGENT_ID>/upload-url?filename=logs.zip" \
+curl -X GET "http://localhost:8080/api/agents/<AGENT_ID>/upload-url?filename=logs.zip" \
   -H "Authorization: Bearer TOKEN_DE_DEPLOYMENT"
 ```
 
