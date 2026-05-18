@@ -72,6 +72,14 @@ services:
       - MINIO_INGEST_BUCKET=${MINIO_INGEST_BUCKET}
       - REDIS_HOST=redis:6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - ONBOARDING_EMAIL_ENABLED=${ONBOARDING_EMAIL_ENABLED:-true}
+      - SMTP_HOST=${SMTP_HOST:-mailpit}
+      - SMTP_PORT=${SMTP_PORT:-1025}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-false}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-onboarding@aegis-ai.local}
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:3000}
     volumes:
       - ../../Aegis-AI-Brain:/app
     ports:
@@ -80,6 +88,8 @@ services:
       db:
         condition: service_healthy
       temporal:
+        condition: service_started
+      mailpit:
         condition: service_started
 
   gateway:
@@ -104,7 +114,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ../../Aegis-AI-Api-Gateway:/app
+      - ../../Aegis-AI-Api-Gateway-Go:/app
     depends_on:
       db:
         condition: service_healthy
@@ -120,7 +130,7 @@ services:
              npx panda codegen &&
              npm run dev -- --host"
     environment:
-      - VITE_API_URL=${VITE_API_URL}
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8080/api}
     ports:
       - "3000:5173"
     volumes:
@@ -181,6 +191,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: aegis-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   aegis-db-data:
