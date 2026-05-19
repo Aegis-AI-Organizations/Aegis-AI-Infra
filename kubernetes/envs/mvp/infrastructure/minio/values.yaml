@@ -4,8 +4,8 @@ global:
 
 auth:
   existingSecret: "aegis-env"
-  rootUserKey: "MINIO_ROOT_USER"
-  rootPasswordKey: "MINIO_ROOT_PASSWORD"
+  rootUserSecretKey: "MINIO_ROOT_USER"
+  rootPasswordSecretKey: "MINIO_ROOT_PASSWORD"
 
 persistence:
   enabled: true
