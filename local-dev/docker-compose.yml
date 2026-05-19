@@ -154,20 +154,10 @@ services:
     container_name: aegis-cloudflared
     profiles:
       - cloudflare
-    command: tunnel --config /etc/cloudflared/config.yml run
-    volumes:
-      - type: bind
-        source: ./cloudflared/config.yml
-        target: /etc/cloudflared/config.yml
-        read_only: true
-        bind:
-          create_host_path: false
-      - type: bind
-        source: ./cloudflared/credentials.json
-        target: /etc/cloudflared/credentials.json
-        read_only: true
-        bind:
-          create_host_path: false
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
+    restart: unless-stopped
     depends_on:
       - proxy
 
