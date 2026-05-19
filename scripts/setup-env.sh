@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
 
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 # Load .env if present (dev local override)
-ENV_FILE="$(cd "$(dirname "$0")/.." && pwd)/.env"
+ENV_FILE="$REPO_ROOT/.env"
 if [ -f "$ENV_FILE" ]; then
   echo "📦 Loading environment variables from .env..."
   set -o allexport
@@ -107,6 +109,11 @@ if [ -f "$ENV_FILE" ]; then
     --namespace aegis-system \
     --dry-run=client -o yaml | kubectl apply -f -
   rm -f /tmp/aegis-env-tmp.txt
+fi
+
+if [[ -z "${TUNNEL_TOKEN:-}" ]]; then
+  echo "⚠️  TUNNEL_TOKEN is not set in .env"
+  echo "   The cloudflared app requires aegis-env/TUNNEL_TOKEN to connect to Cloudflare."
 fi
 
 # Generate mTLS Certificates for Temporal and Brain

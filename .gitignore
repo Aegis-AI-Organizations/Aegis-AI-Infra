@@ -3,3 +3,6 @@
 *.tfstate.backup
 .env
 certificates/
+local-dev/cloudflared/credentials.json
+local-dev/cloudflared/cert.pem
+kubernetes/envs/mvp/infrastructure/cloudflared/credentials.json

@@ -4,15 +4,17 @@ Ce répertoire contient la configuration pour lancer l'écosystème complet Aegi
 
 ## 🏗️ Architecture de Routage
 
-L'environnement local expose le Dashboard en direct via Vite sur le port `3000` et l'API Gateway sur le port `8080`. Le proxy Nginx reste disponible sur le port `80` pour tester un routage type ingress, mais le parcours local-dev recommandé utilise `localhost:3000`.
+L'environnement local expose le Dashboard en direct via Vite sur le port `3000` et l'API Gateway sur le port `8080`. Pour tester les domaines publics en HTTPS, tout passe par Cloudflare Tunnel, puis par le reverse proxy Nginx local qui route selon le hostname.
 
 ```mermaid
 graph TD
     User([Utilisateur]) -- Port 3000 --> Dashboard[Dashboard - Vite]
+    CF[Cloudflare HTTPS] --> Tunnel[cloudflared]
+    Tunnel --> Proxy[Aegis Proxy - Nginx]
+    Proxy -- api.aegis-ai.fr --> Gateway
+    Proxy -- storage.aegis-ai.fr --> MinIOConsole[MinIO Console]
     Dashboard -- HTTP /api --> Gateway[API Gateway - Go]
     Agent([Agent]) -- Port 8080 --> Gateway
-    Proxy[Aegis Proxy - Nginx] -- Optionnel /api/* --> Gateway
-    Proxy -- Optionnel / --> Dashboard
     Gateway -- gRPC --> Brain[Brain - Python]
     Brain -- SQL --> DB[(PostgreSQL)]
     Brain -- S3 --> MinIO[(MinIO Storage)]
@@ -26,6 +28,8 @@ graph TD
 - **Mailpit UI** : [http://localhost:8025](http://localhost:8025)
 - **MinIO Console** : [http://localhost:9001](http://localhost:9001)
 - **Temporal UI** : [http://localhost:8233](http://localhost:8233)
+- **API publique via Cloudflare Tunnel** : [https://api.aegis-ai.fr/health](https://api.aegis-ai.fr/health)
+- **MinIO publique via Cloudflare Tunnel** : [https://storage.aegis-ai.fr](https://storage.aegis-ai.fr)
 
 ---
 
@@ -37,6 +41,24 @@ graph TD
     docker compose up -d
     ```
 3.  **Vérification** : Accédez à `http://localhost:3000`. Vous devriez voir la page de connexion.
+
+---
+
+## 🔐 Cloudflare Tunnel local
+
+Le tunnel local utilise `TUNNEL_TOKEN` depuis `.env`. Dans Cloudflare Zero Trust, les public hostnames du tunnel doivent router vers le reverse proxy local :
+
+- `api.aegis-ai.fr` -> `http://proxy:80` -> `gateway:8080`
+- `storage.aegis-ai.fr` -> `http://proxy:80` -> `minio:9001`
+
+Lancez ensuite le profil Cloudflare :
+
+```bash
+docker compose --profile cloudflare up -d
+curl -fsS https://api.aegis-ai.fr/health
+```
+
+Un seul environnement doit posséder les routes DNS Cloudflare actives pour `api.aegis-ai.fr` et `storage.aegis-ai.fr` à un instant donné : local-dev ou Kubernetes.
 
 ---
 
