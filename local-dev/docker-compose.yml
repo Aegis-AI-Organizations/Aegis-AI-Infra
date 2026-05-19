@@ -138,6 +138,20 @@ services:
     depends_on:
       - gateway
 
+  landing:
+    image: node:20
+    container_name: aegis-landing
+    working_dir: /app
+    command: >
+      sh -c "npm install --ignore-scripts &&
+             npx next dev -p 3001"
+    ports:
+      - "3001:3001"
+    volumes:
+      - ../../Aegis-AI-Landing:/app
+    depends_on:
+      - gateway
+
   proxy:
     image: nginx:alpine
     container_name: aegis-proxy
@@ -148,6 +162,7 @@ services:
     depends_on:
       - dashboard
       - gateway
+      - landing
 
   cloudflared:
     image: cloudflare/cloudflared:latest
