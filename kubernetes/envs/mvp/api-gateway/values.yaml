@@ -92,6 +92,22 @@ env:
       secretKeyRef:
         name: aegis-env
         key: REDIS_PASSWORD
+  - name: MINIO_ENDPOINT
+    value: "aegis-minio-mvp:9000"
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_USER
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_PASSWORD
+  - name: MINIO_BUCKET
+    value: "aegis-telemetry"
+  - name: MINIO_USE_SSL
+    value: "false"
 
 volumeMounts:
   - name: temporal-tls
