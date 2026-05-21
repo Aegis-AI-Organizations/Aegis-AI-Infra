@@ -15,6 +15,13 @@ data:
     http {
       server {
         listen 80;
+        server_name www.aegis-ai.fr;
+
+        return 301 https://aegis-ai.fr$request_uri;
+      }
+
+      server {
+        listen 80;
         server_name api.aegis-ai.fr;
 
         location / {
