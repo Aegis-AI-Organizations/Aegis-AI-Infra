@@ -142,7 +142,8 @@ Cloudflare HTTPS
   -> cloudflared
   -> aegis-edge-proxy
   -> api-gateway-mvp:8080     (api.aegis-ai.fr)
-  -> aegis-minio-mvp:9001     (storage.aegis-ai.fr)
+  -> aegis-minio-mvp:9000     (storage.aegis-ai.fr)
+  -> aegis-minio-mvp:9001     (console-storage.aegis-ai.fr)
 ```
 
 Use the same Cloudflare Tunnel token as local-dev by setting `TUNNEL_TOKEN` in `.env` before running `./scripts/setup-env.sh mvp`. The setup script stores it in `secret/aegis-env`; ArgoCD then deploys `cloudflared` and `aegis-edge-proxy`.
@@ -153,6 +154,7 @@ In Cloudflare Zero Trust, the tunnel public hostnames must point to the reverse 
 app.aegis-ai.fr      -> http://proxy:80
 api.aegis-ai.fr      -> http://proxy:80
 storage.aegis-ai.fr  -> http://proxy:80
+console-storage.aegis-ai.fr -> http://proxy:80
 ```
 
 Only one environment should own `api.aegis-ai.fr` and `storage.aegis-ai.fr` DNS routes at the same time: local-dev or Kubernetes.

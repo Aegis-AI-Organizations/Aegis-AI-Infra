@@ -12,7 +12,8 @@ graph TD
     CF[Cloudflare HTTPS] --> Tunnel[cloudflared]
     Tunnel --> Proxy[Aegis Proxy - Nginx]
     Proxy -- api.aegis-ai.fr --> Gateway
-    Proxy -- storage.aegis-ai.fr --> MinIOConsole[MinIO Console]
+    Proxy -- storage.aegis-ai.fr --> MinIOApi[MinIO S3 API]
+    Proxy -- console-storage.aegis-ai.fr --> MinIOConsole[MinIO Console]
     Dashboard -- HTTP /api --> Gateway[API Gateway - Go]
     Agent([Agent]) -- Port 8080 --> Gateway
     Gateway -- gRPC --> Brain[Brain - Python]
@@ -29,7 +30,8 @@ graph TD
 - **MinIO Console** : [http://localhost:9001](http://localhost:9001)
 - **Temporal UI** : [http://localhost:8233](http://localhost:8233)
 - **API publique via Cloudflare Tunnel** : [https://api.aegis-ai.fr/health](https://api.aegis-ai.fr/health)
-- **MinIO publique via Cloudflare Tunnel** : [https://storage.aegis-ai.fr](https://storage.aegis-ai.fr)
+- **MinIO S3 publique via Cloudflare Tunnel** : [https://storage.aegis-ai.fr](https://storage.aegis-ai.fr)
+- **MinIO Console publique via Cloudflare Tunnel** : [https://console-storage.aegis-ai.fr](https://console-storage.aegis-ai.fr)
 
 ---
 
@@ -49,7 +51,8 @@ graph TD
 Le tunnel local utilise `TUNNEL_TOKEN` depuis `.env`. Dans Cloudflare Zero Trust, les public hostnames du tunnel doivent router vers le reverse proxy local :
 
 - `api.aegis-ai.fr` -> `http://proxy:80` -> `gateway:8080`
-- `storage.aegis-ai.fr` -> `http://proxy:80` -> `minio:9001`
+- `storage.aegis-ai.fr` -> `http://proxy:80` -> `minio:9000`
+- `console-storage.aegis-ai.fr` -> `http://proxy:80` -> `minio:9001`
 
 Lancez ensuite le profil Cloudflare :
 
