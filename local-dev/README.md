@@ -12,6 +12,7 @@ graph TD
     CF[Cloudflare HTTPS] --> Tunnel[cloudflared]
     Tunnel --> Proxy[Aegis Proxy - Nginx]
     Proxy -- api.aegis-ai.fr --> Gateway
+    Proxy -- app.aegis-ai.fr --> Dashboard
     Proxy -- storage.aegis-ai.fr --> MinIOApi[MinIO S3 API]
     Proxy -- console-storage.aegis-ai.fr --> MinIOConsole[MinIO Console]
     Dashboard -- HTTP /api --> Gateway[API Gateway - Go]
@@ -30,6 +31,7 @@ graph TD
 - **MinIO Console** : [http://localhost:9001](http://localhost:9001)
 - **Temporal UI** : [http://localhost:8233](http://localhost:8233)
 - **API publique via Cloudflare Tunnel** : [https://api.aegis-ai.fr/health](https://api.aegis-ai.fr/health)
+- **Dashboard public via Cloudflare Tunnel** : [https://app.aegis-ai.fr](https://app.aegis-ai.fr)
 - **MinIO S3 publique via Cloudflare Tunnel** : [https://storage.aegis-ai.fr](https://storage.aegis-ai.fr)
 - **MinIO Console publique via Cloudflare Tunnel** : [https://console-storage.aegis-ai.fr](https://console-storage.aegis-ai.fr)
 
@@ -42,7 +44,7 @@ graph TD
     ```bash
     docker compose up -d
     ```
-3.  **Vérification** : Accédez à `http://localhost:3000`. Vous devriez voir la page de connexion.
+3.  **Vérification** : Accédez à `http://localhost:3000` ou `https://app.aegis-ai.fr`. Vous devriez voir la page de connexion.
 
 ---
 
@@ -50,18 +52,20 @@ graph TD
 
 Le tunnel local utilise `TUNNEL_TOKEN` depuis `.env`. Dans Cloudflare Zero Trust, les public hostnames du tunnel doivent router vers le reverse proxy local :
 
+- `app.aegis-ai.fr` -> `http://proxy:80` -> `dashboard:5173`
 - `api.aegis-ai.fr` -> `http://proxy:80` -> `gateway:8080`
 - `storage.aegis-ai.fr` -> `http://proxy:80` -> `minio:9000`
 - `console-storage.aegis-ai.fr` -> `http://proxy:80` -> `minio:9001`
 
-Lancez ensuite le profil Cloudflare :
+Le conteneur `cloudflared` démarre avec `docker compose up -d`. Si Cloudflare affiche une erreur 1033, vérifiez que le conteneur est bien actif :
 
 ```bash
-docker compose --profile cloudflare up -d
+docker compose ps cloudflared
+docker compose logs -f cloudflared
 curl -fsS https://api.aegis-ai.fr/health
 ```
 
-Un seul environnement doit posséder les routes DNS Cloudflare actives pour `api.aegis-ai.fr` et `storage.aegis-ai.fr` à un instant donné : local-dev ou Kubernetes.
+Un seul environnement doit posséder les routes DNS Cloudflare actives pour `app.aegis-ai.fr`, `api.aegis-ai.fr` et `storage.aegis-ai.fr` à un instant donné : local-dev ou Kubernetes.
 
 ---
 

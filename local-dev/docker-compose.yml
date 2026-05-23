@@ -172,8 +172,6 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: aegis-cloudflared
-    profiles:
-      - cloudflare
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     command: tunnel --no-autoupdate run
