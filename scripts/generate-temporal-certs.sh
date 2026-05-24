@@ -31,12 +31,12 @@ DNS.2 = $FRONTEND_SVC.$NAMESPACE
 DNS.3 = $FULL_HOST
 DNS.4 = localhost
 EOT
-openssl x509 -req -in "$CERT_DIR/server.csr" -CA "$CERT_DIR/ca.crt" -CAkey "$CERT_DIR/ca.key" -CAcreateserial -out "$CERT_DIR/server.crt" -days 825 -sha256 -extfile "$CERT_DIR/server.ext"
+openssl x509 -req -in "$CERT_DIR/server.csr" -CA "$CERT_DIR/ca.crt" -CAkey "$CERT_DIR/ca.key" -set_serial "$(date +%s)01" -out "$CERT_DIR/server.crt" -days 825 -sha256 -extfile "$CERT_DIR/server.ext"
 
 # 3. Generate Client Certificate (for Workers and KEDA)
 openssl genrsa -out "$CERT_DIR/client.key" 2048
 openssl req -new -key "$CERT_DIR/client.key" -out "$CERT_DIR/client.csr" -subj "/CN=aegis-client"
-openssl x509 -req -in "$CERT_DIR/client.csr" -CA "$CERT_DIR/ca.crt" -CAkey "$CERT_DIR/ca.key" -CAcreateserial -out "$CERT_DIR/client.crt" -days 825 -sha256
+openssl x509 -req -in "$CERT_DIR/client.csr" -CA "$CERT_DIR/ca.crt" -CAkey "$CERT_DIR/ca.key" -set_serial "$(date +%s)02" -out "$CERT_DIR/client.crt" -days 825 -sha256
 
 echo "✅ Certificates generated in $CERT_DIR"
 

@@ -1,0 +1,8 @@
+neo4j:
+  name: "aegis-neo4j"
+  passwordFromSecret: "aegis-env"
+  edition: "community"
+
+volumes:
+  data:
+    mode: "defaultStorageClass"

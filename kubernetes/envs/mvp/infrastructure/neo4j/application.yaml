@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-neo4j-mvp
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://helm.neo4j.com/
+      chart: neo4j
+      targetRevision: 2026.4.0
+      helm:
+        valueFiles:
+          - $values/kubernetes/envs/mvp/infrastructure/neo4j/values.yaml
+    - repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aegis-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

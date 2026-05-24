@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-clickhouse-mvp
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://charts.bitnami.com/bitnami
+      chart: clickhouse
+      targetRevision: 9.4.4
+      helm:
+        valueFiles:
+          - $values/kubernetes/envs/mvp/infrastructure/clickhouse/values.yaml
+    - repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aegis-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

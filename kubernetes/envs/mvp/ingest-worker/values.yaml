@@ -1,0 +1,41 @@
+nameOverride: "ingest-worker-mvp"
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-worker-ingest
+  tag: "latest"
+  pullPolicy: Always
+
+autoscaling:
+  enabled: false
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+probes:
+  enabled: false
+
+env:
+  - name: REDIS_HOST
+    value: "aegis-redis-mvp-master.aegis-system.svc.cluster.local"
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: REDIS_PASSWORD
+  - name: CLICKHOUSE_HOST
+    value: "aegis-clickhouse-mvp.aegis-system.svc.cluster.local"
+  - name: CLICKHOUSE_PORT
+    value: "8123"
+  - name: CLICKHOUSE_USER
+    value: "default"
+  - name: CLICKHOUSE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: CLICKHOUSE_PASSWORD
+  - name: CLICKHOUSE_DB
+    value: "default"

@@ -1,0 +1,16 @@
+<clickhouse>
+    <users>
+        <!-- Remove default user -->
+        <default remove="1" />
+        <!-- Dedicated aegis_admin user -->
+        <aegis_admin>
+            <password from_env="CLICKHOUSE_PASSWORD"/>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>default</profile>
+            <quota>default</quota>
+            <access_management>1</access_management>
+        </aegis_admin>
+    </users>
+</clickhouse>

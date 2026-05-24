@@ -144,9 +144,9 @@ fi
 echo "🔗 Deploying [$ENV] App of Apps..."
 # Try from scripts/ folder or root folder
 if [ -f "kubernetes/bootstrap/root-app-$ENV.yaml" ]; then
-    kubectl apply -f kubernetes/bootstrap/root-app-$ENV.yaml
+    kubectl apply -f kubernetes/bootstrap/root-app-$ENV.yaml || (echo "⏳ Retrying root app deployment..." && sleep 5 && kubectl apply -f kubernetes/bootstrap/root-app-$ENV.yaml)
 else
-    kubectl apply -f ../kubernetes/bootstrap/root-app-$ENV.yaml
+    kubectl apply -f ../kubernetes/bootstrap/root-app-$ENV.yaml || (echo "⏳ Retrying root app deployment..." && sleep 5 && kubectl apply -f ../kubernetes/bootstrap/root-app-$ENV.yaml)
 fi
 
 echo "🔄 Resuming ArgoCD management and scaling up core services..."

@@ -1,0 +1,17 @@
+global:
+  imageRegistry: public.ecr.aws
+
+shards: 1
+replicaCount: 1
+
+keeper:
+  enabled: false
+
+auth:
+  username: aegis_admin
+  existingSecret: "aegis-env"
+  existingSecretKey: "CLICKHOUSE_PASSWORD"
+
+persistence:
+  enabled: true
+  size: 8Gi

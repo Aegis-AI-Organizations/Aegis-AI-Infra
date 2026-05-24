@@ -11,7 +11,7 @@ persistence:
   enabled: true
   size: 10Gi
 
-defaultBuckets: "aegis-telemetry"
+defaultBuckets: "aegis-telemetry,aegis-ingest"
 
 service:
   type: ClusterIP
