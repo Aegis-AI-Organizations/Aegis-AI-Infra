@@ -17,7 +17,7 @@ graph TD
     Proxy -- console-storage.aegis-ai.fr --> MinIOConsole[MinIO Console]
     Dashboard -- HTTP /api --> Gateway[API Gateway - Go]
     Agent([Agent]) -- Port 8080 --> Gateway
-    Gateway -- gRPC --> Brain[Brain - Python]
+    Gateway -- gRPC mTLS --> Brain[Brain - Python]
     Brain -- SQL --> DB[(PostgreSQL)]
     Brain -- S3 --> MinIO[(MinIO Storage)]
     Gateway -- Cache --> Redis[(Redis)]
@@ -40,11 +40,16 @@ graph TD
 ## 🚀 Démarrage Rapide
 
 1.  **Configuration** : Copiez le fichier `.env.example` en `.env` et ajustez les secrets si nécessaire.
-2.  **Lancement** :
+2.  **Certificats mTLS internes** :
+    ```bash
+    ./generate-mtls-certs.sh
+    ```
+    Les certificats locaux sont generes dans `local-dev/certs/`, ignores par Git et montes en lecture seule dans le Gateway et le Brain.
+3.  **Lancement** :
     ```bash
     docker compose up -d
     ```
-3.  **Vérification** : Accédez à `http://localhost:3000` ou `https://app.aegis-ai.fr`. Vous devriez voir la page de connexion.
+4.  **Verification** : Accedez a `http://localhost:3000` ou `https://app.aegis-ai.fr`. Vous devriez voir la page de connexion.
 
 ---
 
@@ -131,7 +136,8 @@ Pour maximiser les performances, l'API Gateway met en cache les résultats de v�
 
 - **404 sur l'API** : Vérifiez que le conteneur `aegis-gateway` est bien lancé et que les routes ont le préfixe `/api`.
 - **Erreur de connexion MinIO** : Si vous testez depuis l'hôte, ajoutez `127.0.0.1 minio` à votre fichier `/etc/hosts`.
-- **Base de données vide** : Le Brain synchronise automatiquement les tables au démarrage. Si besoin, relancez le Brain : `docker compose restart brain`.
+- **Erreur mTLS Gateway/Brain** : Regenerez les certificats avec `./generate-mtls-certs.sh`, puis relancez `docker compose up -d --force-recreate brain gateway`.
+- **Base de donnees vide** : Le Brain applique les migrations Alembic au demarrage. Si besoin, relancez le Brain : `docker compose restart brain`.
 
 ---
 © 2026 Aegis AI. Tous droits réservés.

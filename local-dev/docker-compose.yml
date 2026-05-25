@@ -66,6 +66,10 @@ services:
       - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}
       - JWT_SECRET=${JWT_SECRET}
       - GRPC_PORT=${GRPC_PORT}
+      - BRAIN_TLS_ENABLE=true
+      - BRAIN_TLS_CA_CERT=/etc/aegis/mtls/ca.pem
+      - BRAIN_TLS_SERVER_CERT=/etc/aegis/mtls/brain.pem
+      - BRAIN_TLS_SERVER_KEY=/etc/aegis/mtls/brain.key
       - DEBUG=true
       - ENV=dev
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
@@ -85,6 +89,7 @@ services:
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:3000}
     volumes:
       - ../../Aegis-AI-Brain:/app
+      - ./certs:/etc/aegis/mtls:ro
     ports:
       - "50051:50051"
     depends_on:
@@ -110,6 +115,11 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - BRAIN_GRPC_ADDR=brain:50051
+      - BRAIN_TLS_ENABLE=true
+      - BRAIN_TLS_CA_CERT=/etc/aegis/mtls/ca.pem
+      - BRAIN_TLS_CLIENT_CERT=/etc/aegis/mtls/gateway.pem
+      - BRAIN_TLS_CLIENT_KEY=/etc/aegis/mtls/gateway.key
+      - BRAIN_TLS_SERVER_NAME=brain
       - JWT_SECRET=${JWT_SECRET}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - REDIS_ADDR=redis:6379
@@ -123,6 +133,7 @@ services:
       - "8080:8080"
     volumes:
       - ../../Aegis-AI-Api-Gateway:/app
+      - ./certs:/etc/aegis/mtls:ro
     depends_on:
       db:
         condition: service_healthy

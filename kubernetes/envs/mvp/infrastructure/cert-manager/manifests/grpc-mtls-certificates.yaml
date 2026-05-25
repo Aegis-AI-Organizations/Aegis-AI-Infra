@@ -1,0 +1,44 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: brain-server-tls
+  namespace: aegis-system
+spec:
+  secretName: brain-server-tls
+  commonName: brain-mvp.aegis-system.svc.cluster.local
+  dnsNames:
+    - brain-mvp
+    - brain-mvp.aegis-system
+    - brain-mvp.aegis-system.svc
+    - brain-mvp.aegis-system.svc.cluster.local
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: aegis-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: brain-client-tls
+  namespace: aegis-system
+spec:
+  secretName: brain-client-tls
+  commonName: api-gateway-mvp
+  usages:
+    - client auth
+    - digital signature
+    - key encipherment
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: aegis-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

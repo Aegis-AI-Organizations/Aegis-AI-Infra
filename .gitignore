@@ -5,4 +5,5 @@
 certificates/
 local-dev/cloudflared/credentials.json
 local-dev/cloudflared/cert.pem
+local-dev/certs/
 kubernetes/envs/mvp/infrastructure/cloudflared/credentials.json
