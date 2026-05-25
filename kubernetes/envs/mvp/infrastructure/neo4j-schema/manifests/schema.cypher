@@ -1,0 +1,8 @@
+CREATE CONSTRAINT host_id_unique IF NOT EXISTS
+FOR (h:Host) REQUIRE h.id IS UNIQUE;
+
+CREATE CONSTRAINT container_id_unique IF NOT EXISTS
+FOR (c:Container) REQUIRE c.id IS UNIQUE;
+
+CREATE CONSTRAINT process_id_unique IF NOT EXISTS
+FOR (p:Process) REQUIRE p.id IS UNIQUE;

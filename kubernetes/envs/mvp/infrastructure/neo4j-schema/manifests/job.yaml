@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aegis-neo4j-schema-mvp
+  namespace: aegis-system
+spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 12
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: neo4j-schema
+          image: neo4j:5-community
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NEO4J_URI
+              value: neo4j://aegis-neo4j-mvp.aegis-system.svc.cluster.local:7687
+            - name: NEO4J_USERNAME
+              value: neo4j
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aegis-env
+                  key: NEO4J_PASSWORD
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              echo "Waiting for Neo4j at ${NEO4J_URI}..."
+              until cypher-shell -a "${NEO4J_URI}" -u "${NEO4J_USERNAME}" -p "${NEO4J_PASSWORD}" "RETURN 1" >/dev/null 2>&1; do
+                echo "Neo4j is not reachable yet, retrying in 5s..."
+                sleep 5
+              done
+
+              echo "Applying Neo4j topology constraints..."
+              cypher-shell \
+                -a "${NEO4J_URI}" \
+                -u "${NEO4J_USERNAME}" \
+                -p "${NEO4J_PASSWORD}" \
+                -f /schema/schema.cypher
+
+              cypher-shell \
+                -a "${NEO4J_URI}" \
+                -u "${NEO4J_USERNAME}" \
+                -p "${NEO4J_PASSWORD}" \
+                "SHOW CONSTRAINTS YIELD name RETURN name"
+          volumeMounts:
+            - name: neo4j-schema
+              mountPath: /schema
+              readOnly: true
+      volumes:
+        - name: neo4j-schema
+          configMap:
+            name: aegis-neo4j-schema

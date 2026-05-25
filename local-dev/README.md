@@ -30,6 +30,7 @@ graph TD
 - **Mailpit UI** : [http://localhost:8025](http://localhost:8025)
 - **MinIO Console** : [http://localhost:9001](http://localhost:9001)
 - **Temporal UI** : [http://localhost:8233](http://localhost:8233)
+- **Neo4j Browser** : [http://localhost:7474](http://localhost:7474)
 - **API publique via Cloudflare Tunnel** : [https://api.aegis-ai.fr/health](https://api.aegis-ai.fr/health)
 - **Dashboard public via Cloudflare Tunnel** : [https://app.aegis-ai.fr](https://app.aegis-ai.fr)
 - **MinIO S3 publique via Cloudflare Tunnel** : [https://storage.aegis-ai.fr](https://storage.aegis-ai.fr)
@@ -50,6 +51,26 @@ graph TD
     docker compose up -d
     ```
 4.  **Verification** : Accedez a `http://localhost:3000` ou `https://app.aegis-ai.fr`. Vous devriez voir la page de connexion.
+
+---
+
+## Neo4j topology schema
+
+Le service `neo4j-schema-init` applique avant `worker-ingest` les contraintes uniques sur les identifiants `Host`, `Container` et `Process`.
+
+```bash
+docker compose exec neo4j cypher-shell -u neo4j -p "${NEO4J_PASSWORD:-neo4j_password}" \
+  "SHOW CONSTRAINTS YIELD name RETURN name ORDER BY name"
+```
+
+La verification de rejet d'un doublon peut etre executee dans une transaction, sans conserver de donnees de test :
+
+```bash
+docker compose exec neo4j cypher-shell -u neo4j -p "${NEO4J_PASSWORD:-neo4j_password}" \
+  "CREATE (:Host {id: 'duplicate-check'}); CREATE (:Host {id: 'duplicate-check'});"
+```
+
+La seconde creation doit echouer avec une erreur de contrainte d'unicite.
 
 ---
 

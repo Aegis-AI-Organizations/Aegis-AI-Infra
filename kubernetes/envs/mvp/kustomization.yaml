@@ -18,5 +18,6 @@ resources:
   - network-policies/application.yaml
   - infrastructure/clickhouse/application.yaml
   - infrastructure/neo4j/application.yaml
+  - infrastructure/neo4j-schema/application.yaml
   - pentest-worker/application.yaml
   - ingest-worker/application.yaml
