@@ -218,7 +218,7 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      /bin/sh -c " set -e; mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; mc mb local/aegis-telemetry || true; mc policy set public local/aegis-telemetry; mc mb local/aegis-ingest || true; "
+      /bin/sh -c " set -e; mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; mc mb local/aegis-telemetry || true; mc policy set public local/aegis-telemetry; mc mb local/aegis-ingest || true; mc mb local/releases || true; mc policy set public local/releases; "
 
   redis:
     image: redis:7-alpine
