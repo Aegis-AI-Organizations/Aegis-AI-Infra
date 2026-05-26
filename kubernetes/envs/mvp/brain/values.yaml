@@ -77,6 +77,10 @@ env:
     value: "false"
   - name: MINIO_INGEST_BUCKET
     value: "aegis-ingest"
+  - name: MINIO_EXTERNAL_ENDPOINT
+    value: "storage.aegis-ai.fr"
+  - name: MINIO_EXTERNAL_SECURE
+    value: "true"
   - name: REDIS_HOST
     value: "aegis-redis-mvp-master.aegis-system.svc.cluster.local:6379"
   - name: REDIS_PASSWORD
