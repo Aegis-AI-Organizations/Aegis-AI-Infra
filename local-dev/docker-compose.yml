@@ -53,7 +53,7 @@ services:
       sh -c "apt-get update && apt-get install -y git build-essential libpq-dev &&
              pip install uv &&
              uv sync --no-dev &&
-             uv run alembic upgrade head &&
+             uv run alembic stamp head &&
              uv run python src/main.py"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
