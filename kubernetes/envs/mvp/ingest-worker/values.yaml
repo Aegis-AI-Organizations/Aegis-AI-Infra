@@ -28,7 +28,7 @@ env:
         name: aegis-env
         key: TEMPORAL_NAMESPACE
   - name: TEMPORAL_TLS_ENABLE
-    value: "true"
+    value: "false"
   - name: TEMPORAL_TLS_CA_PATH
     value: "/etc/temporal/config/tls/ca.crt"
   - name: TEMPORAL_TLS_CERT_PATH
@@ -139,9 +139,5 @@ keda:
       metadata:
         namespace: "default"
         taskQueue: "INGEST_TASK_QUEUE"
-        useTLS: "true"
-        tlsServerName: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local"
+        useTLS: "false"
         endpoint: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
-        ca: "/etc/keda/certs/ca.crt"
-        cert: "/etc/keda/certs/tls.crt"
-        key: "/etc/keda/certs/tls.key"
