@@ -1,8 +1,3 @@
-global:
-  imageRegistry: public.ecr.aws
-  security:
-    allowInsecureImages: true
-
 shards: 1
 replicaCount: 1
 
