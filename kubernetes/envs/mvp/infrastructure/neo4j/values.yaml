@@ -1,6 +1,6 @@
 neo4j:
   name: "aegis-neo4j"
-  passwordFromSecret: "aegis-env"
+  password: "neo4j_password"
   edition: "community"
 
 volumes:

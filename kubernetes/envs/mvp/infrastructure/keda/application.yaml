@@ -19,21 +19,22 @@ spec:
           name: keda-operator
         rbac:
           create: true
-        operator:
-          volumes:
+        volumes:
+          keda:
+            extraVolumes:
             - name: temporal-certs
               secret:
                 secretName: temporal-client-tls
-          volumeMounts:
+            extraVolumeMounts:
             - name: temporal-certs
               mountPath: /etc/keda/certs
               readOnly: true
-        metricsServer:
-          volumes:
+          metricsApiServer:
+            extraVolumes:
             - name: temporal-certs
               secret:
                 secretName: temporal-client-tls
-          volumeMounts:
+            extraVolumeMounts:
             - name: temporal-certs
               mountPath: /etc/keda/certs
               readOnly: true

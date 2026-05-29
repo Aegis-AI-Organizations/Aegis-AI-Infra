@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   sources:
-    - repoURL: https://helm.neo4j.com/
+    - repoURL: https://helm.neo4j.com/neo4j
       chart: neo4j
       targetRevision: 2026.4.0
       helm:

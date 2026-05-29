@@ -20,6 +20,23 @@ probes:
   enabled: false
 
 env:
+  - name: TEMPORAL_HOST
+    value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
+  - name: TEMPORAL_NAMESPACE
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: TEMPORAL_NAMESPACE
+  - name: TEMPORAL_TLS_ENABLE
+    value: "true"
+  - name: TEMPORAL_TLS_CA_PATH
+    value: "/etc/temporal/config/tls/ca.crt"
+  - name: TEMPORAL_TLS_CERT_PATH
+    value: "/etc/temporal/config/tls/tls.crt"
+  - name: TEMPORAL_TLS_KEY_PATH
+    value: "/etc/temporal/config/tls/tls.key"
+  - name: TEMPORAL_TLS_SERVER_NAME
+    value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local"
   - name: REDIS_HOST
     value: "aegis-redis-mvp-master.aegis-system.svc.cluster.local"
   - name: REDIS_PASSWORD
@@ -32,7 +49,7 @@ env:
   - name: CLICKHOUSE_PORT
     value: "8123"
   - name: CLICKHOUSE_USER
-    value: "default"
+    value: "aegis_admin"
   - name: CLICKHOUSE_PASSWORD
     valueFrom:
       secretKeyRef:
@@ -40,3 +57,91 @@ env:
         key: CLICKHOUSE_PASSWORD
   - name: CLICKHOUSE_DB
     value: "default"
+  - name: MINIO_ENDPOINT
+    value: "aegis-minio-mvp:9000"
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_USER
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_PASSWORD
+  - name: MINIO_BUCKET
+    value: "aegis-ingest"
+  - name: NEO4J_URL
+    value: "http://aegis-neo4j-mvp.aegis-system.svc.cluster.local:7474"
+  - name: NEO4J_USER
+    value: "neo4j"
+  - name: NEO4J_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: NEO4J_PASSWORD
+
+volumeMounts:
+  - name: temporal-tls
+    mountPath: /etc/temporal/config/tls
+    readOnly: true
+
+volumes:
+  - name: temporal-tls
+    secret:
+      secretName: temporal-client-tls
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+networkPolicy:
+  enabled: true
+  allowDNS: true
+  egress:
+    - toServices:
+        - serviceName: aegis-temporal-mvp-frontend
+          namespace: aegis-system
+      ports:
+        - port: 7233
+          protocol: TCP
+    - toServices:
+        - serviceName: aegis-clickhouse-mvp
+          namespace: aegis-system
+      ports:
+        - port: 8123
+          protocol: TCP
+    - toServices:
+        - serviceName: aegis-minio-mvp
+          namespace: aegis-system
+      ports:
+        - port: 9000
+          protocol: TCP
+    - toServices:
+        - serviceName: aegis-neo4j-mvp
+          namespace: aegis-system
+      ports:
+        - port: 7474
+          protocol: TCP
+
+keda:
+  enabled: true
+  minReplicaCount: 0
+  maxReplicaCount: 20
+  pollingInterval: 15
+  cooldownPeriod: 300
+  triggers:
+    - type: temporal
+      metadata:
+        namespace: "default"
+        taskQueue: "INGEST_TASK_QUEUE"
+        useTLS: "true"
+        tlsServerName: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local"
+        endpoint: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
+        ca: "/etc/keda/certs/ca.crt"
+        cert: "/etc/keda/certs/tls.crt"
+        key: "/etc/keda/certs/tls.key"
