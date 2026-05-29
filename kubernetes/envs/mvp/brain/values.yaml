@@ -16,6 +16,8 @@ service:
   grpcPort: 50051
 
 env:
+  - name: ALEMBIC_BASELINE_EXISTING_SCHEMA
+    value: "true"
   - name: DB_HOST
     value: "aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local:5432"
   - name: POSTGRES_USER
