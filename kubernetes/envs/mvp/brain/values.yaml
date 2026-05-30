@@ -90,6 +90,41 @@ env:
       secretKeyRef:
         name: aegis-env
         key: REDIS_PASSWORD
+  - name: ONBOARDING_EMAIL_ENABLED
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: ONBOARDING_EMAIL_ENABLED
+  - name: SMTP_HOST
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: SMTP_HOST
+  - name: SMTP_PORT
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: SMTP_PORT
+  - name: SMTP_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: SMTP_USERNAME
+  - name: SMTP_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: SMTP_PASSWORD
+  - name: SMTP_USE_TLS
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: SMTP_USE_TLS
+  - name: SMTP_FROM_EMAIL
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: SMTP_FROM_EMAIL
 
 volumeMounts:
   - name: temporal-tls
@@ -184,4 +219,9 @@ networkPolicy:
             app.kubernetes.io/instance: aegis-redis-mvp
       ports:
         - port: 6379
+          protocol: TCP
+    - toEntities:
+        - world
+      ports:
+        - port: 587
           protocol: TCP
