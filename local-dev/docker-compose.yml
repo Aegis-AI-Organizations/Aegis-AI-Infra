@@ -71,7 +71,7 @@ services:
       - BRAIN_TLS_SERVER_CERT=/etc/aegis/mtls/brain.pem
       - BRAIN_TLS_SERVER_KEY=/etc/aegis/mtls/brain.key
       - DEBUG=true
-      - ENV=dev
+      - ENV=${ENV:-dev}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
@@ -87,8 +87,10 @@ services:
       - SMTP_USERNAME=${SMTP_USERNAME:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_USE_TLS=${SMTP_USE_TLS:-false}
-      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-onboarding@aegis-ai.local}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-team@aegis-ai.fr}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:3000}
+      - AEGIS_EMAIL_API_KEY=${AEGIS_EMAIL_API_KEY:-}
+      - AEGIS_EMAIL_API_URL=${AEGIS_EMAIL_API_URL:-https://api.resend.com/emails}
     volumes:
       - ../../Aegis-AI-Brain:/app
       - ./certs:/etc/aegis/mtls:ro

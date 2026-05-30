@@ -90,6 +90,10 @@ env:
       secretKeyRef:
         name: aegis-env
         key: REDIS_PASSWORD
+  - name: ENV
+    value: "production"
+  - name: FRONTEND_BASE_URL
+    value: "https://app.aegis-ai.fr"
   - name: ONBOARDING_EMAIL_ENABLED
     valueFrom:
       secretKeyRef:
@@ -125,6 +129,13 @@ env:
       secretKeyRef:
         name: aegis-env
         key: SMTP_FROM_EMAIL
+  - name: AEGIS_EMAIL_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: AEGIS_EMAIL_API_KEY
+  - name: AEGIS_EMAIL_API_URL
+    value: "https://api.resend.com/emails"
 
 volumeMounts:
   - name: temporal-tls
