@@ -18,6 +18,9 @@ spec:
 {{ toYaml .Values.annotations | indent 8 }}
       {{- end }}
     spec:
+      {{- if hasKey .Values.serviceAccount "automountToken" }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      {{- end }}
       {{- if .Values.initContainers }}
       initContainers:
 {{ toYaml .Values.initContainers | indent 8 }}

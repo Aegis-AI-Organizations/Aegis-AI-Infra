@@ -45,6 +45,7 @@ ingress:
 
 serviceAccount:
   create: false
+  automountToken: true
 
 rbac:
   create: false

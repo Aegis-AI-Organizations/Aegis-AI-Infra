@@ -22,3 +22,4 @@ resources:
   - infrastructure/neo4j-schema/application.yaml
   - pentest-worker/application.yaml
   - ingest-worker/application.yaml
+  - deployer-worker/application.yaml
