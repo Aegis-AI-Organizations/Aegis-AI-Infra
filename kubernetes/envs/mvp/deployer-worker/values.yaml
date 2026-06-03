@@ -26,7 +26,7 @@ env:
   - name: DEPLOYER_TASK_QUEUE
     value: "DEPLOYER_TASK_QUEUE"
   - name: TEMPORAL_TLS_ENABLE
-    value: "true"
+    value: "false"
   - name: TEMPORAL_TLS_CA_PATH
     value: "/etc/temporal/config/tls/ca.crt"
   - name: TEMPORAL_TLS_CERT_PATH
