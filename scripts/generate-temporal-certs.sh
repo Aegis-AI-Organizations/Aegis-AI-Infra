@@ -19,7 +19,7 @@ fi
 
 # 2. Generate Server Certificate
 openssl genrsa -out "$CERT_DIR/server.key" 2048
-openssl req -new -key "$CERT_DIR/server.key" -out "$CERT_DIR/server.csr" -subj "/CN=$FULL_HOST"
+openssl req -new -key "$CERT_DIR/server.key" -out "$CERT_DIR/server.csr" -subj "/CN=$FRONTEND_SVC"
 cat <<EOT > "$CERT_DIR/server.ext"
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE

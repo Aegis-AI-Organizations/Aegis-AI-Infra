@@ -3,18 +3,18 @@ set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-ENV=$1
-if [[ -z "$ENV" ]]; then
+REQUESTED_ENV=$1
+if [[ -z "$REQUESTED_ENV" ]]; then
   echo "Usage: ./setup-env.sh <environment>"
   echo "Example: ./setup-env.sh pre-alpha"
   exit 1
 fi
+ENV="$REQUESTED_ENV"
 
-# Load .env if present (dev local override)
+# Load the Kubernetes environment file by default.
+# local-dev/.env is intentionally reserved for local Docker workflows.
 if [[ -n "${AEGIS_ENV_FILE:-}" ]]; then
   ENV_FILE="$AEGIS_ENV_FILE"
-elif [[ "$ENV" == "mvp" && -f "$REPO_ROOT/local-dev/.env" ]]; then
-  ENV_FILE="$REPO_ROOT/local-dev/.env"
 else
   ENV_FILE="$REPO_ROOT/.env"
 fi
@@ -24,6 +24,8 @@ if [ -f "$ENV_FILE" ]; then
   # shellcheck source=/dev/null
   source "$ENV_FILE"
   set +o allexport
+  ENV="$REQUESTED_ENV"
+  export ENV
 
     required_env_vars=(
         POSTGRES_DB
@@ -107,8 +109,9 @@ kubectl create namespace keda || true
 if [ -f "$ENV_FILE" ]; then
   echo "🔒 Pushing $ENV_FILE into Kubernetes Secret 'aegis-env'..."
   # Use dry-run to apply or overwrite the secret idempotently
-  cat "$ENV_FILE" > /tmp/aegis-env-tmp.txt
+  grep -v -E '^(ENV|password)=' "$ENV_FILE" > /tmp/aegis-env-tmp.txt || true
   echo "" >> /tmp/aegis-env-tmp.txt
+  echo "ENV=${ENV}" >> /tmp/aegis-env-tmp.txt
   echo "password=${POSTGRES_PASSWORD}" >> /tmp/aegis-env-tmp.txt
   kubectl create secret generic aegis-env \
     --from-env-file="/tmp/aegis-env-tmp.txt" \
