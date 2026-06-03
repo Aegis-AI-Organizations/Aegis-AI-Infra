@@ -134,29 +134,13 @@ keda:
   maxReplicaCount: 20
   pollingInterval: 15
   cooldownPeriod: 300
-  triggerAuthentication:
-    enabled: true
-    name: ingest-worker-temporal-auth
-    spec:
-      secretTargetRef:
-        - parameter: ca
-          name: temporal-client-tls
-          key: ca.crt
-        - parameter: cert
-          name: temporal-client-tls
-          key: tls.crt
-        - parameter: key
-          name: temporal-client-tls
-          key: tls.key
   triggers:
     - type: temporal
       metadata:
         namespace: "default"
         taskQueue: "INGEST_TASK_QUEUE"
+        useTLS: "false"
         queueTypes: "workflow,activity"
         targetQueueSize: "1"
         activationTargetQueueSize: "0"
-        tlsServerName: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local"
         endpoint: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
-      authenticationRef:
-        name: ingest-worker-temporal-auth
