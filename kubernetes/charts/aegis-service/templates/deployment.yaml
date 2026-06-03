@@ -5,7 +5,9 @@ metadata:
   labels:
     app: {{ .Values.nameOverride | default .Release.Name }}
 spec:
+  {{- if not .Values.keda.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ .Values.nameOverride | default .Release.Name }}
