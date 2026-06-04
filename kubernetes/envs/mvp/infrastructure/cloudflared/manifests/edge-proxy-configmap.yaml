@@ -97,6 +97,14 @@ data:
         listen 80;
         server_name neo4j.aegis-ai.fr;
 
+        location = / {
+          return 302 /browser/?dbms=https://neo4j.aegis-ai.fr&db=neo4j;
+        }
+
+        location = /browser {
+          return 302 /browser/?dbms=https://neo4j.aegis-ai.fr&db=neo4j;
+        }
+
         location / {
           proxy_pass http://aegis-neo4j-mvp:7474;
           proxy_set_header Host $host;
