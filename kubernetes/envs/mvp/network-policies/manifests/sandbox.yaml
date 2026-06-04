@@ -11,6 +11,3 @@ spec:
         - matchLabels:
             "k8s:io.kubernetes.pod.namespace": aegis-system
             app: pentest-worker-mvp
-  egress:
-    - toEntities:
-        - world
