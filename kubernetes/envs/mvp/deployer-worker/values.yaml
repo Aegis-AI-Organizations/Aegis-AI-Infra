@@ -90,7 +90,7 @@ keda:
   minReplicaCount: 0
   maxReplicaCount: 10
   pollingInterval: 15
-  cooldownPeriod: 300
+  cooldownPeriod: 30
   triggers:
     - type: temporal
       metadata:
