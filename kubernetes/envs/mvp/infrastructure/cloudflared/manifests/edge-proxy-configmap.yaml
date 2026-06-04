@@ -98,11 +98,11 @@ data:
         server_name neo4j.aegis-ai.fr;
 
         location = / {
-          return 302 https://neo4j.aegis-ai.fr/browser/?dbms=bolt://neo4j.aegis-ai.fr:7687&db=neo4j;
+          return 302 https://neo4j.aegis-ai.fr/browser/?dbms=bolt%3A%2F%2Fneo4j.aegis-ai.fr%3A7687&db=neo4j;
         }
 
         location = /browser {
-          return 302 https://neo4j.aegis-ai.fr/browser/?dbms=bolt://neo4j.aegis-ai.fr:7687&db=neo4j;
+          return 302 https://neo4j.aegis-ai.fr/browser/?dbms=bolt%3A%2F%2Fneo4j.aegis-ai.fr%3A7687&db=neo4j;
         }
 
         location / {
