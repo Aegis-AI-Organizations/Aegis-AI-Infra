@@ -17,6 +17,11 @@ spec:
         app.kubernetes.io/name: cloudflared
         app.kubernetes.io/part-of: aegis
     spec:
+      hostAliases:
+        - ip: 192.168.194.210
+          hostnames:
+            - proxy
+            - proxy.aegis-system.svc.cluster.local
       serviceAccountName: cloudflared
       containers:
         - name: cloudflared
