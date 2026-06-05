@@ -179,6 +179,7 @@ done
 echo "🔄 Forcing immediate sync of core infrastructure..."
 kubectl patch application aegis-postgres-$ENV -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
 kubectl patch application aegis-temporal-$ENV -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
+kubectl patch application aegis-cloudflared-$ENV -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
 
 # Explicit scale up of core DB if it was at 0
 PG_STATEFULSET="aegis-postgres-$ENV-postgresql"
@@ -321,6 +322,23 @@ until kubectl get deployment api-gateway-$ENV -n aegis-system >/dev/null 2>&1; d
 kubectl rollout status deployment/api-gateway-$ENV -n aegis-system --timeout=300s
 until kubectl get deployment brain-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
 kubectl rollout status deployment/brain-$ENV -n aegis-system --timeout=300s
+
+echo "🌐 Waiting for Cloudflare tunnel to be ready..."
+timeout=300
+elapsed=0
+until kubectl get deployment cloudflared -n aegis-system >/dev/null 2>&1 || [ $elapsed -ge $timeout ]; do
+    echo "⏳ Waiting for cloudflared deployment to be created..."
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
+
+if [ $elapsed -ge $timeout ]; then
+    echo "❌ Timeout waiting for cloudflared deployment to be created."
+    exit 1
+fi
+
+kubectl rollout status deployment/cloudflared -n aegis-system --timeout=300s
+kubectl get pods -n aegis-system -l app.kubernetes.io/name=cloudflared -o wide || true
 
 echo "🚀 Everything is ready! ArgoCD is now managing your '$ENV' environment."
 echo "You can view ArgoCD by port-forwarding: kubectl port-forward svc/argocd-server -n argocd 8080:443"
