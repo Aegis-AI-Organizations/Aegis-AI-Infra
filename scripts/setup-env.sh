@@ -320,6 +320,10 @@ done
 echo "🚀 Finalizing core Aegis services..."
 until kubectl get deployment api-gateway-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
 kubectl rollout status deployment/api-gateway-$ENV -n aegis-system --timeout=300s
+until kubectl get deployment dashboard-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
+kubectl rollout status deployment/dashboard-$ENV -n aegis-system --timeout=300s
+until kubectl get deployment landing-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
+kubectl rollout status deployment/landing-$ENV -n aegis-system --timeout=300s
 until kubectl get deployment brain-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
 kubectl rollout status deployment/brain-$ENV -n aegis-system --timeout=300s
 
