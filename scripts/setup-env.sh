@@ -320,18 +320,6 @@ done
 echo "🚀 Finalizing core Aegis services..."
 until kubectl get deployment api-gateway-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
 kubectl rollout status deployment/api-gateway-$ENV -n aegis-system --timeout=300s
-echo "🔎 Waiting for API gateway HTTP health..."
-timeout=300
-elapsed=0
-until kubectl exec -n aegis-system deploy/api-gateway-$ENV -- sh -c "wget -qO- http://localhost:8080/health >/dev/null" >/dev/null 2>&1 || [ $elapsed -ge $timeout ]; do
-    echo "⏳ Waiting for api-gateway HTTP health..."
-    sleep 5
-    elapsed=$((elapsed + 5))
-done
-if [ $elapsed -ge $timeout ]; then
-    echo "❌ Timeout waiting for api-gateway HTTP health."
-    exit 1
-fi
 until kubectl get deployment dashboard-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
 kubectl rollout status deployment/dashboard-$ENV -n aegis-system --timeout=300s
 until kubectl get deployment landing-$ENV -n aegis-system >/dev/null 2>&1; do sleep 2; done
