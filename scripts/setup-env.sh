@@ -187,10 +187,9 @@ wait_for_argocd_application() {
     local elapsed=0
 
     echo "⏳ Waiting for ArgoCD application '${app_name}' to sync..."
-    until [[ "$(kubectl get application "$app_name" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || true)" == "Synced" ]] && \
-          [[ "$(kubectl get application "$app_name" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || true)" == "Healthy" ]]; do
+    until [[ "$(kubectl get application "$app_name" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || true)" == "Synced" ]]; do
         if [ $elapsed -ge $timeout ]; then
-            echo "❌ Timeout waiting for ArgoCD application '${app_name}' to be Synced and Healthy."
+            echo "❌ Timeout waiting for ArgoCD application '${app_name}' to be Synced."
             kubectl get application "$app_name" -n argocd -o yaml 2>/dev/null || true
             exit 1
         fi
