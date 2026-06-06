@@ -181,6 +181,27 @@ kubectl patch application aegis-postgres-$ENV -n argocd --type=merge -p '{"metad
 kubectl patch application aegis-temporal-$ENV -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
 kubectl patch application aegis-cloudflared-$ENV -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
 
+wait_for_argocd_application() {
+    local app_name="$1"
+    local timeout="$2"
+    local elapsed=0
+
+    echo "⏳ Waiting for ArgoCD application '${app_name}' to sync..."
+    until [[ "$(kubectl get application "$app_name" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || true)" == "Synced" ]] && \
+          [[ "$(kubectl get application "$app_name" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || true)" == "Healthy" ]]; do
+        if [ $elapsed -ge $timeout ]; then
+            echo "❌ Timeout waiting for ArgoCD application '${app_name}' to be Synced and Healthy."
+            kubectl get application "$app_name" -n argocd -o yaml 2>/dev/null || true
+            exit 1
+        fi
+        sleep 5
+        elapsed=$((elapsed + 5))
+    done
+}
+
+wait_for_argocd_application "aegis-postgres-$ENV" 300
+wait_for_argocd_application "aegis-temporal-$ENV" 300
+
 # Explicit scale up of core DB if it was at 0
 PG_STATEFULSET="aegis-postgres-$ENV-postgresql"
 PG_HOST="aegis-postgres-$ENV-postgresql.aegis-system.svc.cluster.local"
@@ -195,21 +216,24 @@ fi
 # Wait for PG to be ready
 echo "🐘 Waiting for PostgreSQL to be healthy..."
 PG_POD_LBL="app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=aegis-postgres-$ENV"
-# 1. Wait for pod existence first to avoid "no matching resources found" crashing kubectl wait
 timeout=300
 elapsed=0
-until kubectl get pods -l "$PG_POD_LBL" -n aegis-system -o name 2>/dev/null | grep -q "pod/" || [ $elapsed -ge $timeout ]; do
-    echo "⏳ Waiting for PostgreSQL pods to be created..."
+until kubectl get statefulset "$PG_STATEFULSET" -n aegis-system >/dev/null 2>&1; do
+    if [ $elapsed -ge $timeout ]; then
+        echo "❌ Timeout waiting for PostgreSQL StatefulSet to be created."
+        exit 1
+    fi
+    echo "⏳ Waiting for PostgreSQL StatefulSet to be created..."
     sleep 5
     elapsed=$((elapsed + 5))
 done
 
 if [ $elapsed -ge $timeout ]; then
-    echo "❌ Timeout waiting for PostgreSQL pods to be created."
+    echo "❌ Timeout waiting for PostgreSQL StatefulSet to be created."
     exit 1
 fi
 
-# 2. Now wait for readiness
+kubectl rollout status statefulset/$PG_STATEFULSET -n aegis-system --timeout=300s
 kubectl wait --for=condition=ready pod -l "$PG_POD_LBL" -n aegis-system --timeout=300s
 
 # Check if databases exist (local clusters can lose data on restart)
