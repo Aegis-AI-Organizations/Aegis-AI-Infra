@@ -12,9 +12,13 @@ fi
 ENV="$REQUESTED_ENV"
 
 # Load the Kubernetes environment file by default.
-# local-dev/.env is intentionally reserved for local Docker workflows.
+# Fall back to local-dev/.env if the infra root .env is missing so bootstrap still works.
 if [[ -n "${AEGIS_ENV_FILE:-}" ]]; then
   ENV_FILE="$AEGIS_ENV_FILE"
+elif [ -f "$REPO_ROOT/.env" ]; then
+  ENV_FILE="$REPO_ROOT/.env"
+elif [ -f "$REPO_ROOT/local-dev/.env" ]; then
+  ENV_FILE="$REPO_ROOT/local-dev/.env"
 else
   ENV_FILE="$REPO_ROOT/.env"
 fi
@@ -105,7 +109,7 @@ kubectl create namespace argocd || true
 kubectl create namespace aegis-system || true
 kubectl create namespace keda || true
 
-# Inject the local .env securely into the Kubernetes cluster
+# Inject the resolved env file securely into the Kubernetes cluster
 if [ -f "$ENV_FILE" ]; then
   echo "🔒 Pushing $ENV_FILE into Kubernetes Secret 'aegis-env'..."
   # Use dry-run to apply or overwrite the secret idempotently
