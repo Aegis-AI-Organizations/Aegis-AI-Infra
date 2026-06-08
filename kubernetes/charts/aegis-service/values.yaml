@@ -52,6 +52,10 @@ rbac:
   clusterRole: false
   rules: []
 
+sandboxNamespacePolicy:
+  enabled: false
+  prefix: "aegis-war-room-"
+
 networkPolicy:
   enabled: false
   allowDNS: true

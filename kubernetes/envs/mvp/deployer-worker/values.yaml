@@ -62,12 +62,23 @@ rbac:
   create: true
   clusterRole: true
   rules:
+    # Kubernetes RBAC cannot express wildcard resourceNames such as
+    # aegis-war-room-*. The deployer code enforces that namespace prefix before
+    # every Kubernetes write, while RBAC omits namespace reads entirely so
+    # reading "default" is denied.
     - apiGroups: [""]
       resources: ["namespaces"]
       verbs: ["create", "delete"]
     - apiGroups: [""]
-      resources: ["pods", "services"]
-      verbs: ["create", "get", "list", "watch", "delete"]
+      resources: ["pods"]
+      verbs: ["create", "get"]
+    - apiGroups: [""]
+      resources: ["services"]
+      verbs: ["create"]
+
+sandboxNamespacePolicy:
+  enabled: true
+  prefix: "aegis-war-room-"
 
 networkPolicy:
   enabled: true

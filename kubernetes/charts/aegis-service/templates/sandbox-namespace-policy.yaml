@@ -1,0 +1,31 @@
+{{- if .Values.sandboxNamespacePolicy.enabled -}}
+{{- $name := .Values.nameOverride | default .Release.Name -}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ $name }}-sandbox-namespace-policy
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "DELETE"]
+        resources: ["namespaces"]
+  matchConditions:
+    - name: deployer-service-account
+      expression: 'request.userInfo.username == "system:serviceaccount:{{ .Release.Namespace }}:{{ $name }}"'
+  validations:
+    - expression: 'object == null || object.metadata.name.startsWith({{ .Values.sandboxNamespacePolicy.prefix | quote }})'
+      message: "deployer worker may only create sandbox namespaces"
+    - expression: 'oldObject == null || oldObject.metadata.name.startsWith({{ .Values.sandboxNamespacePolicy.prefix | quote }})'
+      message: "deployer worker may only delete sandbox namespaces"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ $name }}-sandbox-namespace-policy
+spec:
+  policyName: {{ $name }}-sandbox-namespace-policy
+  validationActions: ["Deny"]
+{{- end -}}
