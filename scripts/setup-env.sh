@@ -357,7 +357,7 @@ kubectl rollout status deployment/brain-$ENV -n aegis-system --timeout=300s
 echo "🔎 Waiting for public edge routes to respond..."
 timeout=300
 elapsed=0
-until kubectl exec -n aegis-system deploy/aegis-edge-proxy -- sh -c 'wget -qO- --header="Host: app.aegis-ai.fr" http://localhost/ >/dev/null && wget -qO- --header="Host: api.aegis-ai.fr" http://localhost/health >/dev/null && wget -qO- --header="Host: aegis-ai.fr" http://localhost/ >/dev/null' >/dev/null 2>&1 || [ $elapsed -ge $timeout ]; do
+until kubectl exec -n aegis-system deploy/aegis-edge-proxy -- sh -c 'wget -qO- --header="Host: app.aegis-ai.fr" http://127.0.0.1/ >/dev/null && wget -qO- --header="Host: api.aegis-ai.fr" http://127.0.0.1/health >/dev/null && wget -qO- --header="Host: aegis-ai.fr" http://127.0.0.1/ >/dev/null' >/dev/null 2>&1 || [ $elapsed -ge $timeout ]; do
     echo "⏳ Waiting for edge proxy routes to respond..."
     sleep 5
     elapsed=$((elapsed + 5))
