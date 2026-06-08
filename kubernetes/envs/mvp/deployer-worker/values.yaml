@@ -75,6 +75,9 @@ rbac:
     - apiGroups: [""]
       resources: ["services"]
       verbs: ["create"]
+    - apiGroups: ["apps"]
+      resources: ["deployments"]
+      verbs: ["create", "get"]
 
 sandboxNamespacePolicy:
   enabled: true
