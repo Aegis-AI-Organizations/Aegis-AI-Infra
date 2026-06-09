@@ -1,3 +1,5 @@
+name: aegis-local-dev
+
 services:
   # --- Infrastructure ---
   db:
