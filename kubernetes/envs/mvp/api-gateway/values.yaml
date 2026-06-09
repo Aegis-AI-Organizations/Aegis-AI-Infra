@@ -92,6 +92,17 @@ env:
       secretKeyRef:
         name: aegis-env
         key: REDIS_PASSWORD
+  - name: NEO4J_URL
+    value: "http://aegis-neo4j-mvp.aegis-system.svc.cluster.local:7474"
+  - name: NEO4J_USER
+    value: "neo4j"
+  - name: NEO4J_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: NEO4J_PASSWORD
+  - name: NEO4J_DATABASE
+    value: "neo4j"
   - name: MINIO_ENDPOINT
     value: "aegis-minio-mvp:9000"
   - name: MINIO_ACCESS_KEY
@@ -178,4 +189,11 @@ networkPolicy:
             app.kubernetes.io/instance: aegis-redis-mvp
       ports:
         - port: 6379
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: neo4j
+            app.kubernetes.io/instance: aegis-neo4j-mvp
+      ports:
+        - port: 7474
           protocol: TCP
