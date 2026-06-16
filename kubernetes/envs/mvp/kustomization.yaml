@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - infrastructure/cert-manager/application.yaml
   - infrastructure/cert-manager/issuers-app.yaml
+  - infrastructure/gvisor-runtimeclass/application.yaml
   - infrastructure/keda/application.yaml
   - api-gateway/application.yaml
   - brain/application.yaml

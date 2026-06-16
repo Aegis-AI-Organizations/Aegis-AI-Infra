@@ -81,6 +81,9 @@ rbac:
     - apiGroups: ["apps"]
       resources: ["deployments"]
       verbs: ["create", "get"]
+    - apiGroups: ["networking.k8s.io"]
+      resources: ["networkpolicies"]
+      verbs: ["create"]
 
 sandboxNamespacePolicy:
   enabled: true
