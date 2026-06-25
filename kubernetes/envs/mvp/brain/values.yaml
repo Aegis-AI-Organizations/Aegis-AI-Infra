@@ -173,13 +173,16 @@ resources:
     memory: 256Mi
 
 serviceAccount:
-  create: false
-  automountToken: false
+  create: true
+  automountToken: true
 
 rbac:
-  create: false
-  clusterRole: false
-  rules: []
+  create: true
+  clusterRole: true
+  rules:
+    - apiGroups: [""]
+      resources: ["pods", "services"]
+      verbs: ["get", "list"]
 
 initContainers:
   - name: wait-for-postgres
@@ -239,4 +242,14 @@ networkPolicy:
         - world
       ports:
         - port: 587
+          protocol: TCP
+    - toEntities:
+        - kube-apiserver
+      ports:
+        - port: 443
+          protocol: TCP
+    - toEntities:
+        - cluster
+      ports:
+        - port: 5432
           protocol: TCP
