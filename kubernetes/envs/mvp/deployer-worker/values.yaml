@@ -38,16 +38,40 @@ env:
     value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local"
   - name: TEMPORAL_WORKER_STOP_TIMEOUT_SECONDS
     value: "840"
+  - name: MINIO_ENDPOINT
+    value: "aegis-minio-mvp:9000"
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_USER
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_PASSWORD
+  - name: MINIO_SECURE
+    value: "false"
+  - name: MINIO_INGEST_BUCKET
+    value: "aegis-ingest"
+  - name: AEGIS_IMAGE_IMPORT_COMMAND
+    value: "docker load -i {archive}"
 
 volumeMounts:
   - name: temporal-tls
     mountPath: /etc/temporal/config/tls
     readOnly: true
+  - name: docker-sock
+    mountPath: /var/run/docker.sock
 
 volumes:
   - name: temporal-tls
     secret:
       secretName: temporal-client-tls
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
 
 resources:
   limits:
@@ -109,6 +133,12 @@ networkPolicy:
         - kube-apiserver
       ports:
         - port: 443
+          protocol: TCP
+    - toServices:
+        - serviceName: aegis-minio-mvp
+          namespace: aegis-system
+      ports:
+        - port: 9000
           protocol: TCP
 
 keda:
