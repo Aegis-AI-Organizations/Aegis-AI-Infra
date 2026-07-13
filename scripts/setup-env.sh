@@ -66,6 +66,60 @@ cleanup_stale_keda_apiservices() {
     kubectl delete apiservice v1alpha1.eventing.keda.sh --ignore-not-found >/dev/null 2>&1 || true
 }
 
+wait_for_postgres_sql() {
+    local timeout="${1:-300}"
+    local elapsed=0
+
+    echo "🐘 Waiting for PostgreSQL SQL connections to be stable..."
+    until kubectl exec -n aegis-system statefulset/$PG_STATEFULSET -- sh -c "PGPASSWORD=\"$POSTGRES_PASSWORD\" psql -h 127.0.0.1 -p 5432 -U \"$POSTGRES_USER\" -d postgres -c 'SELECT 1' >/dev/null 2>&1"; do
+        if [ $elapsed -ge $timeout ]; then
+            echo "❌ Timeout waiting for PostgreSQL SQL connections."
+            kubectl get pods -n aegis-system -l "$PG_POD_LBL" -o wide || true
+            kubectl logs -n aegis-system statefulset/$PG_STATEFULSET --tail=100 || true
+            exit 1
+        fi
+        echo "   ...PostgreSQL SQL connection not ready yet ($elapsed/$timeout s)"
+        sleep 5
+        elapsed=$((elapsed + 5))
+    done
+}
+
+run_temporal_sql_tool() {
+    local description="$1"
+    shift
+    local timeout=180
+    local elapsed=0
+    local output_file
+    output_file=$(mktemp)
+
+    echo "   -> $description"
+    while true; do
+        if kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint "$PG_HOST" "$@" >"$output_file" 2>&1; then
+            cat "$output_file"
+            rm -f "$output_file"
+            return 0
+        fi
+
+        if grep -Eiq 'already exists|duplicate|current version|no change' "$output_file"; then
+            cat "$output_file"
+            rm -f "$output_file"
+            return 0
+        fi
+
+        cat "$output_file"
+        if [ $elapsed -ge $timeout ]; then
+            echo "❌ Temporal SQL step failed after retries: $description"
+            rm -f "$output_file"
+            exit 1
+        fi
+
+        echo "      ...retrying Temporal SQL step after PostgreSQL is ready ($elapsed/$timeout s)"
+        wait_for_postgres_sql 120
+        sleep 5
+        elapsed=$((elapsed + 5))
+    done
+}
+
 is_any_namespace_terminating() {
     for ns in "${NAMESPACES_TO_CHECK[@]}"; do
         phase=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null || true)
@@ -238,11 +292,12 @@ fi
 
 kubectl rollout status statefulset/$PG_STATEFULSET -n aegis-system --timeout=300s
 kubectl wait --for=condition=ready pod -l "$PG_POD_LBL" -n aegis-system --timeout=300s
+wait_for_postgres_sql 300
 
 # Check if databases exist (local clusters can lose data on restart)
 echo "🔍 Checking database integrity..."
-HAS_CLIENT_DB=$(kubectl exec -n aegis-system statefulset/$PG_STATEFULSET -- sh -c "PGPASSWORD=$POSTGRES_PASSWORD psql -U aegis_admin -lqt" | cut -d \| -f 1 | grep -qw "aegis_db" && echo "yes" || echo "no")
-HAS_TEMPORAL_DB=$(kubectl exec -n aegis-system statefulset/$PG_STATEFULSET -- sh -c "PGPASSWORD=$POSTGRES_PASSWORD psql -U aegis_admin -lqt" | cut -d \| -f 1 | grep -qw "aegis_persistence" && echo "yes" || echo "no")
+HAS_CLIENT_DB=$(kubectl exec -n aegis-system statefulset/$PG_STATEFULSET -- sh -c "PGPASSWORD=\"$POSTGRES_PASSWORD\" psql -h 127.0.0.1 -U \"$POSTGRES_USER\" -lqt" | cut -d \| -f 1 | grep -qw "$POSTGRES_DB" && echo "yes" || echo "no")
+HAS_TEMPORAL_DB=$(kubectl exec -n aegis-system statefulset/$PG_STATEFULSET -- sh -c "PGPASSWORD=\"$POSTGRES_PASSWORD\" psql -h 127.0.0.1 -U \"$POSTGRES_USER\" -lqt" | cut -d \| -f 1 | grep -qw "aegis_persistence" && echo "yes" || echo "no")
 
 if [ "$HAS_CLIENT_DB" = "no" ]; then
     echo "⚠️  Application database missing. Forcing database initialization..."
@@ -252,6 +307,7 @@ fi
 if [ "$HAS_TEMPORAL_DB" = "no" ]; then
     echo "⚠️  Temporal database missing. Forcing schema initialization..."
     kubectl delete job -n aegis-system -l "app.kubernetes.io/instance=aegis-temporal-$ENV,app.kubernetes.io/component=database" --ignore-not-found
+    wait_for_postgres_sql 300
 fi
 
 # Kick ArgoCD root app and wait for Jobs to complete
@@ -271,19 +327,25 @@ kubectl rollout status deployment/aegis-temporal-$ENV-admintools -n aegis-system
 
 # 2. Run schema initialization from the stable admintools container
 ADM_POD=$(kubectl get pod -l app.kubernetes.io/instance=aegis-temporal-$ENV,app.kubernetes.io/component=admintools -n aegis-system -o name | head -n 1)
+wait_for_postgres_sql 300
 
 echo "   -> Creating databases..."
 # Ignore errors if they already exist (idempotent). Database name is a positional argument for create-database.
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database aegis_persistence || true
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local create-database aegis_visibility || true
+run_temporal_sql_tool "Creating Temporal persistence database" create-database aegis_persistence
+wait_for_postgres_sql 120
+run_temporal_sql_tool "Creating Temporal visibility database" create-database aegis_visibility
+wait_for_postgres_sql 120
 
 echo "   -> Setting up schema..."
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence setup-schema -v 0.0 || true
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility setup-schema -v 0.0 || true
+run_temporal_sql_tool "Setting up Temporal persistence schema" --db aegis_persistence setup-schema -v 0.0
+wait_for_postgres_sql 120
+run_temporal_sql_tool "Setting up Temporal visibility schema" --db aegis_visibility setup-schema -v 0.0
+wait_for_postgres_sql 120
 
 echo "   -> Updating schema to latest..."
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_persistence update-schema -d /etc/temporal/schema/postgresql/v12/temporal/versioned || true
-kubectl exec -n aegis-system "$ADM_POD" -- temporal-sql-tool --plugin postgres12 --port 5432 --endpoint aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local --db aegis_visibility update-schema -d /etc/temporal/schema/postgresql/v12/visibility/versioned || true
+run_temporal_sql_tool "Updating Temporal persistence schema" --db aegis_persistence update-schema -d /etc/temporal/schema/postgresql/v12/temporal/versioned
+wait_for_postgres_sql 120
+run_temporal_sql_tool "Updating Temporal visibility schema" --db aegis_visibility update-schema -d /etc/temporal/schema/postgresql/v12/visibility/versioned
 
 echo "⏳ Cleaning up and waiting for Aegis AI application job..."
 # Force job recreation if it already exists to ensure seeding runs on new postgres instance
