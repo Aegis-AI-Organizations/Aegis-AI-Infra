@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-dashboard
-  tag: "latest"
+  tag: "83977ee"
   pullPolicy: Always
 
 service:
@@ -40,7 +40,7 @@ resources:
 
 initContainers:
   - name: config-init
-    image: busybox:latest
+    image: busybox:1.36.1
     command: ["sh", "-c", "cp /tmp/nginx/default.conf /etc/nginx/conf.d/default.conf"]
     volumeMounts:
       - name: nginx-cm-volume

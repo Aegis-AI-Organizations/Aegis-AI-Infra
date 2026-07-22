@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-landing
-  tag: "latest"
+  tag: "ada41f7"
   pullPolicy: Always
 
 service:

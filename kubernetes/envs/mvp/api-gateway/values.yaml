@@ -6,8 +6,8 @@ annotations:
 replicaCount: 1
 
 image:
-  repository: ghcr.io/aegis-ai-organizations/aegis-ai-api-gateway
-  tag: "latest"
+  repository: aegis-api
+  tag: "a8931b6"
   pullPolicy: Always
 
 service:
@@ -146,10 +146,10 @@ resources:
 
 initContainers:
   - name: wait-for-postgres
-    image: alpine
+    image: alpine:3.20
     command: ["sh", "-c", "until nc -zv aegis-postgres-mvp-postgresql.aegis-system.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
   - name: wait-for-temporal
-    image: alpine
+    image: alpine:3.20
     command: ["sh", "-c", "until nc -zv aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local 7233; do echo 'Waiting for temporal...'; sleep 3; done"]
 
 networkPolicy:
