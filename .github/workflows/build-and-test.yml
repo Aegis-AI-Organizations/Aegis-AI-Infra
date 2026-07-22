@@ -21,6 +21,8 @@ jobs:
           done
       - name: Validate Predictable Deployments
         run: bash scripts/validate-predictable-deployments.sh
+      - name: Validate Local DevOps Loop
+        run: bash scripts/validate-local-devops-loop.sh
       - name: Validate Helm Charts
         run: |
           find kubernetes/charts -name Chart.yaml -print0 | while IFS= read -r -d '' chart; do

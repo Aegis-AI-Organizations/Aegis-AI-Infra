@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aegis-local-target
+  labels:
+    app.kubernetes.io/name: aegis-local-target
+    app.kubernetes.io/part-of: aegis

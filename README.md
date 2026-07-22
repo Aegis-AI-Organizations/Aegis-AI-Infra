@@ -159,6 +159,23 @@ console-storage.aegis-ai.fr -> http://proxy:80
 
 Only one environment should own `api.aegis-ai.fr` and `storage.aegis-ai.fr` DNS routes at the same time: local-dev or Kubernetes.
 
+### Local DevOps Loop
+
+Use these commands to run the reproducible local validation loop against the Kubernetes MVP stack:
+
+```bash
+# Map local ingress IP to app.aegis.mvp.local and api.aegis.mvp.local.
+make setup-dns
+
+# Deploy the deterministic SQLi target with flag aegis-flag-1234.
+make deploy-local-target
+
+# Upload the sandbox topology, trigger a scan, and assert the reported flag.
+make e2e-local-loop
+```
+
+`make setup-dns` updates `/etc/hosts` and may request `sudo`. The E2E script reads `AEGIS_SEED_USER_EMAIL` and `AEGIS_SEED_USER_PASSWORD` from `.env` by default, uploads an Aegis-Target topology artifact to MinIO, scans the resulting `minio://` reference, and expects `aegis-flag-1234` in the reported vulnerability evidence. Override `API_BASE_URL`, `SCAN_TARGET_REF`, `ARTIFACT_BUCKET`, `TIMEOUT_SECONDS`, or `POLL_INTERVAL_SECONDS` when testing a non-default local cluster.
+
 ---
 
 ## 🌍 Available Environments
