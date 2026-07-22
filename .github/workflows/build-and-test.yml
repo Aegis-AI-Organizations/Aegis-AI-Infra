@@ -20,7 +20,7 @@ jobs:
             bash -n "$script"
           done
       - name: Validate Predictable Deployments
-        run: scripts/validate-predictable-deployments.sh
+        run: bash scripts/validate-predictable-deployments.sh
       - name: Validate Helm Charts
         run: |
           find kubernetes/charts -name Chart.yaml -print0 | while IFS= read -r -d '' chart; do
