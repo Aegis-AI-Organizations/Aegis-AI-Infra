@@ -18,6 +18,7 @@
 - CrewAI V1 must not receive Kubernetes write RBAC.
 - CrewAI listens to Temporal task queue `CREWAI_TASK_QUEUE`.
 - CrewAI image repository is `ghcr.io/aegis-ai-organizations/aegis-ai-agent-crew`.
+- CrewAI image tag is immutable `v2.0.8`; `latest` is forbidden by `scripts/validate-predictable-deployments.sh`.
 
 ---
 
@@ -243,7 +244,7 @@ terminationGracePeriodSeconds: 900
 
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-agent-crew
-  tag: "latest"
+  tag: "v2.0.8"
   pullPolicy: IfNotPresent
 
 service:
@@ -357,7 +358,7 @@ Run:
 helm template crewai-worker-mvp kubernetes/charts/aegis-service -f kubernetes/envs/mvp/crewai-worker/values.yaml
 ```
 
-Expected: output includes `Deployment`, `Service`, `CiliumNetworkPolicy`, `ScaledObject`, image `ghcr.io/aegis-ai-organizations/aegis-ai-agent-crew:latest`, `CREWAI_MODE`, `CREWAI_TASK_QUEUE`, and `toFQDNs` for `host.docker.internal`.
+Expected: output includes `Deployment`, `Service`, `CiliumNetworkPolicy`, `ScaledObject`, image `ghcr.io/aegis-ai-organizations/aegis-ai-agent-crew:v2.0.8`, `CREWAI_MODE`, `CREWAI_TASK_QUEUE`, and `toFQDNs` for `host.docker.internal`.
 
 - [ ] **Step 5: Render the MVP app-of-apps**
 

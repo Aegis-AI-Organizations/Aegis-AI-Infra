@@ -60,7 +60,7 @@ If `host.docker.internal` is not reachable from pods, use the Mac LAN IP and upd
 Use the GHCR image published by Sprint 1:
 
 - repository: `ghcr.io/aegis-ai-organizations/aegis-ai-agent-crew`
-- tag: the confirmed release tag, or `latest` if the MVP should track the newest Crew image during active integration.
+- tag: `v2.0.8`
 
 ## Scaling
 
@@ -148,7 +148,7 @@ The Infra repo currently has local uncommitted changes unrelated to this design.
 
 The external Ollama endpoint must be reachable from pods before finalizing values. Start with `http://host.docker.internal:11434`; if pod-level probing fails, use the Mac LAN IP instead.
 
-The CrewAI image tag must be confirmed before values are committed. `latest` is acceptable for fast MVP iteration only if the team accepts mutable image behavior.
+The CrewAI image tag must stay immutable because `scripts/validate-predictable-deployments.sh` forbids `latest` in Kubernetes deployment manifests.
 
 ## Self-Review
 
