@@ -4,7 +4,7 @@
 
 Deploy the `Aegis-AI-Agent-Crew` image as a non-destructive Temporal worker in the MVP Kubernetes environment.
 
-This is Sprint 2 of the CrewAI integration path. Sprint 1 published the Docker image to GHCR. Sprint 2 must make the worker run in-cluster, connect to Temporal, reach Ollama, and stay ready for Sprint 3 Brain integration.
+This is Sprint 2 of the CrewAI integration path. Sprint 1 published the Docker image to GHCR. Sprint 2 must make the worker run in-cluster, connect to Temporal, reach the external Ollama MVP endpoint, and stay ready for Sprint 3 Brain integration.
 
 ## Recommended Approach
 
@@ -43,17 +43,19 @@ The worker container runs the published CrewAI image in worker mode:
 - `CREWAI_TASK_QUEUE=CREWAI_TASK_QUEUE`
 - `TEMPORAL_TLS_ENABLE=false`
 
-CrewAI LLM role defaults should point to in-cluster Ollama:
+CrewAI LLM role defaults should point to the external Ollama MVP endpoint running on the Mac host:
 
 - `PLANNER_PROVIDER=ollama`
 - `PLANNER_MODEL=llama3.1:8b`
-- `PLANNER_API_BASE=http://ollama-mvp.aegis-system.svc.cluster.local:11434`
+- `PLANNER_API_BASE=http://host.docker.internal:11434`
 - `GUIDER_PROVIDER=ollama`
 - `GUIDER_MODEL=whiterabbitneo`
-- `GUIDER_API_BASE=http://ollama-mvp.aegis-system.svc.cluster.local:11434`
+- `GUIDER_API_BASE=http://host.docker.internal:11434`
 - `EXECUTOR_PROVIDER=ollama`
 - `EXECUTOR_MODEL=deepseek-coder-v2`
-- `EXECUTOR_API_BASE=http://ollama-mvp.aegis-system.svc.cluster.local:11434`
+- `EXECUTOR_API_BASE=http://host.docker.internal:11434`
+
+If `host.docker.internal` is not reachable from pods, use the Mac LAN IP and update all three `*_API_BASE` values consistently.
 
 Use the GHCR image published by Sprint 1:
 
@@ -65,7 +67,7 @@ Use the GHCR image published by Sprint 1:
 Enable KEDA with a Temporal trigger:
 
 - `minReplicaCount: 1` for Sprint 2 so connection failures surface immediately.
-- `maxReplicaCount: 5` initially to protect local Ollama and laptop clusters.
+- `maxReplicaCount: 5` initially to protect the external Mac-hosted Ollama process and laptop clusters.
 - `taskQueue: CREWAI_TASK_QUEUE`
 - `endpoint: aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233`
 - `queueTypes: workflow,activity`
@@ -85,7 +87,7 @@ Enable Cilium network policy with:
 
 - DNS egress enabled.
 - Egress to Temporal frontend on TCP `7233`.
-- Egress to Ollama service on TCP `11434`.
+- Egress to the external Ollama endpoint on TCP `11434`.
 
 No ingress is required. The worker is driven by Temporal polling only.
 
@@ -125,6 +127,7 @@ Cluster verification after ArgoCD sync:
 - `kubectl get pods -n aegis-system -l app=crewai-worker-mvp`
 - `kubectl logs -n aegis-system deploy/crewai-worker-mvp`
 - confirm logs include connection to Temporal host and task queue `CREWAI_TASK_QUEUE`.
+- confirm the worker does not report `OLLAMA_UNREACHABLE` when probing the configured external Ollama URL.
 
 ## Out Of Scope
 
@@ -136,14 +139,16 @@ Sprint 2 does not add Kubernetes write permissions to CrewAI.
 
 Sprint 2 does not require Docker local builds, because image publication is already validated by GitHub Actions and GHCR.
 
+Sprint 2 does not deploy Ollama into Kubernetes. Ollama remains external and host-managed for the MacBook MVP.
+
 ## Risks
 
 The Infra repo currently has local uncommitted changes unrelated to this design. Implementation must preserve them and stage only CrewAI files.
 
-Ollama service manifests were not found in the current Infra tree during design exploration. Implementation must verify the actual in-cluster service name before finalizing network policy and `*_API_BASE` values. If `ollama-mvp` does not exist, the implementation should stop and ask for the correct service name instead of guessing.
+The external Ollama endpoint must be reachable from pods before finalizing values. Start with `http://host.docker.internal:11434`; if pod-level probing fails, use the Mac LAN IP instead.
 
 The CrewAI image tag must be confirmed before values are committed. `latest` is acceptable for fast MVP iteration only if the team accepts mutable image behavior.
 
 ## Self-Review
 
-No placeholders remain. The design is scoped to Kubernetes deployment only and explicitly excludes Brain integration. The runtime env, network policy, scaling, and verification steps match the current MVP worker deployment pattern. The only unresolved external dependency is the actual Ollama service name, which is called out as a required implementation check.
+No placeholders remain. The design is scoped to Kubernetes deployment only and explicitly excludes Brain integration. The runtime env, network policy, scaling, and verification steps match the current MVP worker deployment pattern. Ollama is intentionally external for the MacBook MVP and covered by `2026-07-31-external-ollama-mvp-design.md`.
