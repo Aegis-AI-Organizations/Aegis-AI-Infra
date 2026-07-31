@@ -148,15 +148,18 @@ In `kubernetes/charts/aegis-service/values.yaml`, update the `networkPolicy` exa
   egress: []
 ```
 
-to:
+to this valid YAML comment shape:
 
 ```yaml
+  # egress supports toEndpoints, toEntities, toServices, and toFQDNs.
+  # Example:
+  # egress:
+  #   - toFQDNs:
+  #       - matchName: host.docker.internal
+  #     ports:
+  #       - port: 11434
+  #         protocol: TCP
   egress: []
-    # - toFQDNs:
-    #     - matchName: host.docker.internal
-    #   ports:
-    #     - port: 11434
-    #       protocol: TCP
 ```
 
 - [ ] **Step 5: Verify the rendered policy now includes toFQDNs**
