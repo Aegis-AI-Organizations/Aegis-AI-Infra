@@ -39,13 +39,13 @@ env:
   - name: GUIDER_PROVIDER
     value: "ollama"
   - name: GUIDER_MODEL
-    value: "whiterabbitneo"
+    value: "WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest"
   - name: GUIDER_API_BASE
     value: "http://host.docker.internal:11434"
   - name: EXECUTOR_PROVIDER
     value: "ollama"
   - name: EXECUTOR_MODEL
-    value: "deepseek-coder-v2"
+    value: "deepseek-coder-v2:16b"
   - name: EXECUTOR_API_BASE
     value: "http://host.docker.internal:11434"
 

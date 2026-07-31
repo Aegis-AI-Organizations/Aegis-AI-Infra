@@ -49,10 +49,10 @@ CrewAI LLM role defaults should point to the external Ollama MVP endpoint runnin
 - `PLANNER_MODEL=llama3.1:8b`
 - `PLANNER_API_BASE=http://host.docker.internal:11434`
 - `GUIDER_PROVIDER=ollama`
-- `GUIDER_MODEL=whiterabbitneo`
+- `GUIDER_MODEL=WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest`
 - `GUIDER_API_BASE=http://host.docker.internal:11434`
 - `EXECUTOR_PROVIDER=ollama`
-- `EXECUTOR_MODEL=deepseek-coder-v2`
+- `EXECUTOR_MODEL=deepseek-coder-v2:16b`
 - `EXECUTOR_API_BASE=http://host.docker.internal:11434`
 
 If `host.docker.internal` is not reachable from pods, use the Mac LAN IP and update all three `*_API_BASE` values consistently.

@@ -19,15 +19,15 @@ Ollama runs on macOS using the native runtime so it can use Apple Metal accelera
 The required models are pulled and maintained on the host:
 
 - `llama3.1:8b`
-- `whiterabbitneo`
-- `deepseek-coder-v2`
+- `WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest`
+- `deepseek-coder-v2:16b`
 
 Host setup commands:
 
 ```bash
 ollama pull llama3.1:8b
-ollama pull whiterabbitneo
-ollama pull deepseek-coder-v2
+ollama pull WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest
+ollama pull deepseek-coder-v2:16b
 ollama list
 ```
 
@@ -56,8 +56,8 @@ For the MVP local profile, use one shared value for all three roles.
 The CrewAI worker values should also set the models explicitly:
 
 - `PLANNER_MODEL=llama3.1:8b`
-- `GUIDER_MODEL=whiterabbitneo`
-- `EXECUTOR_MODEL=deepseek-coder-v2`
+- `GUIDER_MODEL=WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest`
+- `EXECUTOR_MODEL=deepseek-coder-v2:16b`
 
 ## Kubernetes Networking
 
@@ -113,8 +113,8 @@ Before syncing `aegis-crewai-worker-mvp`, run on the Mac host:
 ```bash
 ollama serve
 ollama pull llama3.1:8b
-ollama pull whiterabbitneo
-ollama pull deepseek-coder-v2
+ollama pull WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest
+ollama pull deepseek-coder-v2:16b
 curl -fsS http://127.0.0.1:11434/api/tags
 ```
 

@@ -278,13 +278,13 @@ env:
   - name: GUIDER_PROVIDER
     value: "ollama"
   - name: GUIDER_MODEL
-    value: "whiterabbitneo"
+    value: "WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest"
   - name: GUIDER_API_BASE
     value: "http://host.docker.internal:11434"
   - name: EXECUTOR_PROVIDER
     value: "ollama"
   - name: EXECUTOR_MODEL
-    value: "deepseek-coder-v2"
+    value: "deepseek-coder-v2:16b"
   - name: EXECUTOR_API_BASE
     value: "http://host.docker.internal:11434"
 
@@ -403,8 +403,8 @@ Before syncing `aegis-crewai-worker-mvp`, run on the Mac host:
 ```bash
 ollama serve
 ollama pull llama3.1:8b
-ollama pull whiterabbitneo
-ollama pull deepseek-coder-v2
+ollama pull WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B:latest
+ollama pull deepseek-coder-v2:16b
 curl -fsS http://127.0.0.1:11434/api/tags
 ```
 
