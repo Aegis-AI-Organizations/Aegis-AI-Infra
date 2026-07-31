@@ -60,6 +60,14 @@ networkPolicy:
   enabled: false
   allowDNS: true
   ingress: []
+  # egress supports toEndpoints, toEntities, toServices, and toFQDNs.
+  # Example:
+  # egress:
+  #   - toFQDNs:
+  #       - matchName: host.docker.internal
+  #     ports:
+  #       - port: 11434
+  #         protocol: TCP
   egress: []
 
 keda:

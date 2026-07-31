@@ -51,6 +51,12 @@ spec:
             {{- toYaml . | nindent 12 }}
         {{- end }}
       {{- end }}
+      {{- if .toFQDNs }}
+      toFQDNs:
+        {{- range .toFQDNs }}
+        - {{ toYaml . | nindent 10 | trim }}
+        {{- end }}
+      {{- end }}
       {{- if .ports }}
       toPorts:
         {{- range .ports }}
