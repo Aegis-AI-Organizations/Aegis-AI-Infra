@@ -24,3 +24,4 @@ resources:
   - pentest-worker/application.yaml
   - ingest-worker/application.yaml
   - deployer-worker/application.yaml
+  - crewai-worker/application.yaml

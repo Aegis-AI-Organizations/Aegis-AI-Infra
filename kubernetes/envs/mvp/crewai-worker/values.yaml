@@ -1,0 +1,100 @@
+nameOverride: "crewai-worker-mvp"
+
+replicaCount: 0
+terminationGracePeriodSeconds: 900
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-agent-crew
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+probes:
+  enabled: false
+
+env:
+  - name: CREWAI_MODE
+    value: "worker"
+  - name: TEMPORAL_HOST
+    value: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
+  - name: TEMPORAL_NAMESPACE
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: TEMPORAL_NAMESPACE
+  - name: CREWAI_TASK_QUEUE
+    value: "CREWAI_TASK_QUEUE"
+  - name: TEMPORAL_TLS_ENABLE
+    value: "false"
+  - name: PLANNER_PROVIDER
+    value: "ollama"
+  - name: PLANNER_MODEL
+    value: "llama3.1:8b"
+  - name: PLANNER_API_BASE
+    value: "http://host.docker.internal:11434"
+  - name: GUIDER_PROVIDER
+    value: "ollama"
+  - name: GUIDER_MODEL
+    value: "whiterabbitneo"
+  - name: GUIDER_API_BASE
+    value: "http://host.docker.internal:11434"
+  - name: EXECUTOR_PROVIDER
+    value: "ollama"
+  - name: EXECUTOR_MODEL
+    value: "deepseek-coder-v2"
+  - name: EXECUTOR_API_BASE
+    value: "http://host.docker.internal:11434"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+serviceAccount:
+  create: false
+  automountToken: false
+
+rbac:
+  create: false
+  clusterRole: false
+  rules: []
+
+networkPolicy:
+  enabled: true
+  allowDNS: true
+  egress:
+    - toServices:
+        - serviceName: aegis-temporal-mvp-frontend
+          namespace: aegis-system
+      ports:
+        - port: 7233
+          protocol: TCP
+    - toFQDNs:
+        - matchName: host.docker.internal
+      ports:
+        - port: 11434
+          protocol: TCP
+
+keda:
+  enabled: true
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  pollingInterval: 15
+  cooldownPeriod: 900
+  triggers:
+    - type: temporal
+      metadata:
+        namespace: "default"
+        taskQueue: "CREWAI_TASK_QUEUE"
+        useTLS: "false"
+        queueTypes: "workflow,activity"
+        targetQueueSize: "1"
+        activationTargetQueueSize: "0"
+        endpoint: "aegis-temporal-mvp-frontend.aegis-system.svc.cluster.local:7233"
