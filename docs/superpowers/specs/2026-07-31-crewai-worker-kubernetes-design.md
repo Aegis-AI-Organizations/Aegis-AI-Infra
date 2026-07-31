@@ -128,6 +128,7 @@ Cluster verification after ArgoCD sync:
 - `kubectl logs -n aegis-system deploy/crewai-worker-mvp`
 - confirm logs include connection to Temporal host and task queue `CREWAI_TASK_QUEUE`.
 - confirm the worker does not report `OLLAMA_UNREACHABLE` when probing the configured external Ollama URL.
+- if the worker reports `OLLAMA_UNREACHABLE`, verify `ollama serve` is running on the Mac host and probe `http://host.docker.internal:11434/api/tags` from an ephemeral pod before changing CrewAI code.
 
 ## Out Of Scope
 

@@ -106,6 +106,27 @@ That future design can add GPU node selectors, `nvidia.com/gpu` resource request
 
 Do not add these GPU/in-cluster resources in the current MacBook MVP.
 
+## Operator Checklist
+
+Before syncing `aegis-crewai-worker-mvp`, run on the Mac host:
+
+```bash
+ollama serve
+ollama pull llama3.1:8b
+ollama pull whiterabbitneo
+ollama pull deepseek-coder-v2
+curl -fsS http://127.0.0.1:11434/api/tags
+```
+
+Then verify from the cluster:
+
+```bash
+kubectl run ollama-probe --rm -i --restart=Never --image=curlimages/curl -- \
+  curl -fsS http://host.docker.internal:11434/api/tags
+```
+
+If this fails, replace `host.docker.internal` in `kubernetes/envs/mvp/crewai-worker/values.yaml` with the Mac LAN IP and rerun the probe.
+
 ## Self-Review
 
 No placeholders remain. The design explicitly chooses external Ollama, defines required host models, gives candidate endpoints, preserves CrewAI configurability, and calls out the network policy caveat around host endpoints. It intentionally avoids adding Kubernetes Ollama resources until a real VM or GPU-capable cluster exists.
