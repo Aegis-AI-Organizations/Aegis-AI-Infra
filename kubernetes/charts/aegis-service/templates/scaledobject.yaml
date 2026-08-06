@@ -9,6 +9,10 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ .Values.nameOverride | default .Release.Name }}
+  {{- if .Values.keda.triggerAuthentication.enabled }}
+  authenticationRef:
+    name: {{ .Values.keda.triggerAuthentication.name | default (printf "%s-trigger-auth" (.Values.nameOverride | default .Release.Name)) }}
+  {{- end }}
   minReplicaCount: {{ .Values.keda.minReplicaCount | default 0 }}
   maxReplicaCount: {{ .Values.keda.maxReplicaCount | default 10 }}
   pollingInterval: {{ .Values.keda.pollingInterval | default 15 }}

@@ -15,11 +15,27 @@ spec:
     metadata:
       labels:
         app: {{ .Values.nameOverride | default .Release.Name }}
-      {{- if .Values.annotations }}
+        {{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | indent 8 }}
+        {{- end }}
+      {{- if or .Values.annotations .Values.podAnnotations }}
       annotations:
+        {{- if .Values.annotations }}
 {{ toYaml .Values.annotations | indent 8 }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- end }}
       {{- end }}
     spec:
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
       {{- if .Values.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- end }}
@@ -37,6 +53,14 @@ spec:
         - name: {{ .Values.nameOverride | default .Release.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.command }}
+          command:
+{{ toYaml .Values.command | indent 12 }}
+          {{- end }}
+          {{- if .Values.args }}
+          args:
+{{ toYaml .Values.args | indent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.targetPort | default .Values.service.port }}
               name: http

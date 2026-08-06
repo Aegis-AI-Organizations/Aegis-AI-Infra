@@ -7,6 +7,15 @@ image:
   tag: "1.27-alpine"
   pullPolicy: IfNotPresent
 
+imagePullSecrets: []
+
+command: []
+args: []
+
+podLabels: {}
+podAnnotations: {}
+podSecurityContext: {}
+
 service:
   type: ClusterIP
   port: 80
