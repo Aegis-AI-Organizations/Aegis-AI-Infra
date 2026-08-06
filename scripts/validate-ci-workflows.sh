@@ -13,7 +13,11 @@ require_grep() {
   fi
 }
 
-require_grep '^    timeout-minutes: 14$' "$WORKFLOW"
+if grep -qE '^    timeout-minutes:' "$WORKFLOW"; then
+  echo "Build/test workflow must not use job-level timeouts because they can expire while queued" >&2
+  exit 1
+fi
+
 require_grep "version: 'v3\.15\.4'" "$WORKFLOW"
 require_grep "version: 'v1\.30\.8'" "$WORKFLOW"
 require_grep 'bash scripts/validate-ci-workflows\.sh' "$WORKFLOW"
