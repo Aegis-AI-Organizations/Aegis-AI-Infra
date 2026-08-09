@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKFLOW="$ROOT_DIR/.github/workflows/build-and-test.yml"
+ORCHESTRATOR="$ROOT_DIR/.github/workflows/ci-orchestrator.yml"
 
 require_grep() {
   local pattern="$1"
@@ -21,3 +22,4 @@ fi
 require_grep "version: 'v3\.15\.4'" "$WORKFLOW"
 require_grep "version: 'v1\.30\.8'" "$WORKFLOW"
 require_grep 'bash scripts/validate-ci-workflows\.sh' "$WORKFLOW"
+require_grep '^  workflow_dispatch:$' "$ORCHESTRATOR"
