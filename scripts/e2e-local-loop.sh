@@ -130,7 +130,9 @@ payload = {
                 "ports": [{"name": "http", "container_port": 8080, "port": 8080}],
                 "config_files": [{"path": "/app/app.py", "content": app}],
             }
-        ]
+        ],
+        "databaseSchemas": [],
+        "externalMocks": [],
     },
 }
 
