@@ -46,5 +46,7 @@ require_grep '/api/auth/login' scripts/e2e-local-loop.sh
 require_grep '/api/storage/upload-url' scripts/e2e-local-loop.sh
 require_grep '/api/scans' scripts/e2e-local-loop.sh
 require_grep 'minio://' scripts/e2e-local-loop.sh
+require_grep '"databaseSchemas"' scripts/e2e-local-loop.sh
+require_grep '"externalMocks"' scripts/e2e-local-loop.sh
 require_grep 'AEGIS_SEED_USER_EMAIL' scripts/e2e-local-loop.sh
 require_grep 'AEGIS_SEED_USER_PASSWORD' scripts/e2e-local-loop.sh
