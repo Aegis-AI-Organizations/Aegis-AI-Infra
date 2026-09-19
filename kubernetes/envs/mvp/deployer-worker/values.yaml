@@ -5,8 +5,8 @@ terminationGracePeriodSeconds: 900
 
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-worker-deployer
-  tag: "e98daf5"
-  pullPolicy: Always
+  tag: "8e196af-local"
+  pullPolicy: IfNotPresent
 
 service:
   type: ClusterIP
