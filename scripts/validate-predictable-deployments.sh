@@ -11,13 +11,18 @@ if grep -RInE 'tag:[[:space:]]*["'"'']?latest["'"'']?[[:space:]]*$|image:[[:spac
   exit 1
 fi
 
-if ! grep -qE '^[[:space:]]*repository:[[:space:]]*"?aegis-api"?[[:space:]]*$' "$API_VALUES"; then
-  echo "api-gateway image repository must render as aegis-api:a8931b6" >&2
+if ! grep -qE '^[[:space:]]*repository:[[:space:]]*"?ghcr\.io/aegis-ai-organizations/aegis-ai-api-gateway"?[[:space:]]*$' "$API_VALUES"; then
+  echo "api-gateway image repository must use the local MVP GHCR image name" >&2
   exit 1
 fi
 
-if ! grep -qE '^[[:space:]]*tag:[[:space:]]*"?a8931b6"?[[:space:]]*$' "$API_VALUES"; then
-  echo "api-gateway image tag must render as aegis-api:a8931b6" >&2
+if ! grep -qE '^[[:space:]]*tag:[[:space:]]*"?crewai-fields-local"?[[:space:]]*$' "$API_VALUES"; then
+  echo "api-gateway image tag must use crewai-fields-local for local MVP reproducibility" >&2
+  exit 1
+fi
+
+if ! grep -qE '^[[:space:]]*pullPolicy:[[:space:]]*IfNotPresent[[:space:]]*$' "$API_VALUES"; then
+  echo "api-gateway image pull policy must avoid remote pulls in the local MVP" >&2
   exit 1
 fi
 

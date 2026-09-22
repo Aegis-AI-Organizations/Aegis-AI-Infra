@@ -6,9 +6,9 @@ annotations:
 replicaCount: 1
 
 image:
-  repository: aegis-api
-  tag: "a8931b6"
-  pullPolicy: Always
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-api-gateway
+  tag: "crewai-fields-local"
+  pullPolicy: IfNotPresent
 
 service:
   type: ClusterIP
