@@ -66,6 +66,8 @@ require_grep 'port-forward' scripts/e2e-local-loop-port-forward.sh
 require_grep 'API_BASE_URL="http://127\.0\.0\.1' scripts/e2e-local-loop-port-forward.sh
 require_grep 'WorkflowId STARTS_WITH "graph-pentest-workflow-"' scripts/temporal-list-graph-pentest-workflows.sh
 require_grep 'CONFIRM=terminate-stale-graph-pentest' scripts/temporal-cleanup-stale-graph-pentest-workflows.sh
+require_grep 'TEMPORAL_CLI_TLS_CA' scripts/temporal-list-graph-pentest-workflows.sh
+require_grep 'TEMPORAL_CLI_TLS_CA' scripts/temporal-cleanup-stale-graph-pentest-workflows.sh
 
 require_grep 'ghcr\.io/aegis-ai-organizations/aegis-ai-api-gateway' kubernetes/envs/mvp/api-gateway/values.yaml
 require_grep 'crewai-fields-local' kubernetes/envs/mvp/api-gateway/values.yaml
