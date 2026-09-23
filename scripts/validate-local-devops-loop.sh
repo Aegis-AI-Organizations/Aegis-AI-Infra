@@ -92,3 +92,7 @@ require_grep 'ADD COLUMN IF NOT EXISTS crew_report_json' kubernetes/envs/mvp/inf
 require_grep 'ADD COLUMN IF NOT EXISTS crew_report_markdown' kubernetes/envs/mvp/infrastructure/db-init/manifests/init.sql
 require_grep 'aegis-flag-1234' docs/mvp-demo-checklist.md
 require_grep 'CrewAI pentest analysis status=COMPLETED' docs/mvp-demo-checklist.md
+require_grep 'ImagePullBackOff' docs/mvp-demo-checklist.md
+require_grep 'api\.aegis\.mvp\.local' docs/mvp-demo-checklist.md
+require_grep 'validate-predictable-deployments\.sh' docs/mvp-demo-checklist.md
+require_grep 'CONFIRM=terminate-stale-graph-pentest' docs/mvp-demo-checklist.md

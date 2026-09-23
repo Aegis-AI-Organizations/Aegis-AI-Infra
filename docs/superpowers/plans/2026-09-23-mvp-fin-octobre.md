@@ -119,7 +119,39 @@ Keep ArgoCD synced, remove `ImagePullBackOff`, prove e2e with port-forward, and 
 
 - [ ] **Week of Sep 30: Product path hardening**
 
-Validate Dashboard/API scan creation, report download, user-facing error states, and repeatable sandbox cleanup.
+Continue stabilizing the Kubernetes MVP and make the pentest pipeline reliable over time:
+
+- Correct any remaining `ImagePullBackOff` pods so the MVP no longer depends on old pods that were already `Running`.
+- Improve local setup to avoid DNS blockers around `api.aegis.mvp.local`; keep `make e2e-local-loop-port-forward` as the supported fallback and document when to use it.
+- Clarify local e2e documentation: login, topology upload, scan creation, status polling, vulnerability assertion, CrewAI evidence, PDF report, and cleanup checks.
+- Verify `Brain -> CrewAI -> Worker Pentest -> Report` remains reproducible after a full redeploy, not only on a warmed cluster.
+- Keep monitoring Temporal workflow state to avoid accumulation of blocked `graph-pentest-workflow-*` executions.
+- Evaluate whether automatic stale workflow cleanup is acceptable; until validated, keep cleanup guarded by `CONFIRM=terminate-stale-graph-pentest`.
+
+- [ ] **Step 1: Check MVP image pull health**
+
+Run: `kubectl -n aegis-system get pods -o wide | grep -E 'ImagePullBackOff|ErrImagePull' || true`
+Expected: no active `ImagePullBackOff` or `ErrImagePull` for MVP-critical deployments.
+
+- [ ] **Step 2: Verify local DNS fallback path**
+
+Run: `make e2e-local-loop-port-forward`
+Expected: `Local DevOps loop succeeded: aegis-flag-1234 extracted.`
+
+- [ ] **Step 3: Verify full pipeline evidence after redeploy**
+
+Run: `kubectl -n aegis-system rollout restart deploy/brain-mvp deploy/crewai-worker-mvp && kubectl -n aegis-system rollout status deploy/brain-mvp --timeout=180s && kubectl -n aegis-system rollout status deploy/crewai-worker-mvp --timeout=180s && make e2e-local-loop-port-forward`
+Expected: scan reaches `COMPLETED`, Brain logs show `CrewAI pentest analysis status=COMPLETED`, and report generation logs include `Stored PDF report`.
+
+- [ ] **Step 4: Monitor Temporal blocked workflows**
+
+Run: `make temporal-list-graph-pentest-workflows`
+Expected: no unexpected long-running `Running` graph workflow remains after e2e completion.
+
+- [ ] **Step 5: Cleanup stale workflows only with explicit approval**
+
+Run: `CONFIRM=terminate-stale-graph-pentest make temporal-cleanup-stale-graph-pentest-workflows`
+Expected: only stale `ExecutionStatus = "Running"` `graph-pentest-workflow-*` executions are terminated.
 
 - [ ] **Week of Oct 7: Fresh cluster reproducibility**
 
