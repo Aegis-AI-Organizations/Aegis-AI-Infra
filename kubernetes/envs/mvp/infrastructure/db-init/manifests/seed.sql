@@ -2,17 +2,19 @@
 -- Initializes local developer environment.
 
 WITH upsert_company AS (
-  INSERT INTO companies (name, logo_url, deployment_token, is_active)
+  INSERT INTO companies (name, logo_url, deployment_token, is_active, token_balance)
   VALUES (
     'Aegis AI',
     'https://aegis-ai.com/logo.png',
     encode(digest('ag_local_dev_token_32chars_seed', 'sha256'), 'hex'),
-    true
+    true,
+    100
   )
   ON CONFLICT (name) DO UPDATE SET
     logo_url = EXCLUDED.logo_url,
     deployment_token = COALESCE(companies.deployment_token, EXCLUDED.deployment_token),
-    is_active = EXCLUDED.is_active
+    is_active = EXCLUDED.is_active,
+    token_balance = GREATEST(companies.token_balance, EXCLUDED.token_balance)
   RETURNING id
 ), upsert_user AS (
   INSERT INTO users (company_id, name, email, password_hash, role, is_active)

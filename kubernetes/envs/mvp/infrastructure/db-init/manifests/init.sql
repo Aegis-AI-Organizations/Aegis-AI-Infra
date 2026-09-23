@@ -40,6 +40,10 @@ DO $$ BEGIN
     ) THEN
         ALTER TABLE scans ALTER COLUMN company_id SET NOT NULL;
     END IF;
+
+    ALTER TABLE scans ADD COLUMN IF NOT EXISTS debug_bundle TEXT;
+    ALTER TABLE scans ADD COLUMN IF NOT EXISTS crew_report_json TEXT;
+    ALTER TABLE scans ADD COLUMN IF NOT EXISTS crew_report_markdown TEXT;
 END $$;
 
 CREATE TABLE IF NOT EXISTS vulnerabilities (
