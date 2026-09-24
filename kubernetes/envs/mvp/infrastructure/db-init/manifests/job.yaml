@@ -3,6 +3,9 @@ kind: Job
 metadata:
   name: aegis-db-init-mvp
   namespace: aegis-system
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
 spec:
   ttlSecondsAfterFinished: 100
   backoffLimit: 6
