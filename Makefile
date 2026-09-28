@@ -1,4 +1,4 @@
-.PHONY: setup-dns deploy-local-target delete-local-target build-local-mvp-images e2e-local-loop e2e-local-loop-port-forward verify-demo-readiness verify-mvp-pipeline verify-mvp-redeploy-resilience temporal-list-graph-pentest-workflows temporal-cleanup-stale-graph-pentest-workflows validate-local-devops-loop
+.PHONY: setup-dns deploy-local-target delete-local-target build-local-mvp-images e2e-local-loop e2e-local-loop-port-forward verify-demo-readiness verify-mvp-pipeline verify-mvp-redeploy-resilience verify-mvp-fresh-cluster temporal-list-graph-pentest-workflows temporal-cleanup-stale-graph-pentest-workflows validate-local-devops-loop
 
 setup-dns:
 	bash scripts/setup-dns.sh
@@ -26,6 +26,9 @@ verify-mvp-pipeline:
 
 verify-mvp-redeploy-resilience:
 	bash scripts/verify-mvp-redeploy-resilience.sh
+
+verify-mvp-fresh-cluster:
+	bash scripts/verify-mvp-fresh-cluster.sh
 
 temporal-list-graph-pentest-workflows:
 	bash scripts/temporal-list-graph-pentest-workflows.sh

@@ -167,6 +167,11 @@ Expected: only stale `ExecutionStatus = "Running"` `graph-pentest-workflow-*` ex
 
 Run teardown/setup from scratch and verify e2e without relying on old pods or manual patches.
 
+- [ ] **Step 1: Verify guarded fresh-cluster rebuild**
+
+Run: `CONFIRM=fresh-mvp-cluster TIMEOUT_SECONDS=1200 make verify-mvp-fresh-cluster`
+Expected: the local `mvp` environment is torn down, rebuilt by `setup-env.sh mvp`, and then passes `make verify-mvp-pipeline`. If the namespace is stuck in `Terminating`, the script must stop and print explicit diagnostic/finalization commands instead of forcing cleanup automatically.
+
 - [ ] **Week of Oct 14: Demo readiness**
 
 Prepare a deterministic demo script: login, create scan, monitor progress, inspect vulnerabilities, download report.
