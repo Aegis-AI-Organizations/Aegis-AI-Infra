@@ -25,10 +25,12 @@ require_file scripts/setup-dns.sh
 require_file scripts/e2e-local-loop.sh
 require_file scripts/e2e-local-loop-port-forward.sh
 require_file scripts/verify-demo-readiness.sh
+require_file scripts/verify-mvp-pipeline.sh
 require_file scripts/build-local-mvp-images.sh
 require_file scripts/temporal-list-graph-pentest-workflows.sh
 require_file scripts/temporal-cleanup-stale-graph-pentest-workflows.sh
 require_file docs/mvp-demo-checklist.md
+require_file docs/superpowers/plans/2026-09-23-mvp-fin-octobre.md
 require_file kubernetes/local-target/kustomization.yaml
 require_file kubernetes/local-target/deployment.yaml
 require_file kubernetes/local-target/service.yaml
@@ -46,6 +48,7 @@ require_grep '^build-local-mvp-images:' Makefile
 require_grep '^e2e-local-loop:' Makefile
 require_grep '^e2e-local-loop-port-forward:' Makefile
 require_grep '^verify-demo-readiness:' Makefile
+require_grep '^verify-mvp-pipeline:' Makefile
 require_grep '^temporal-list-graph-pentest-workflows:' Makefile
 require_grep '^temporal-cleanup-stale-graph-pentest-workflows:' Makefile
 
@@ -73,6 +76,10 @@ require_grep 'CrewAI pentest analysis status=COMPLETED' scripts/verify-demo-read
 require_grep 'Stored PDF report' scripts/verify-demo-readiness.sh
 require_grep 'ImagePullBackOff\|ErrImagePull' scripts/verify-demo-readiness.sh
 require_grep 'e2e-local-loop-port-forward' scripts/verify-demo-readiness.sh
+require_grep 'aegis-flag-1234' scripts/verify-mvp-pipeline.sh
+require_grep 'CrewAI pentest analysis status=COMPLETED' scripts/verify-mvp-pipeline.sh
+require_grep 'Stored PDF report' scripts/verify-mvp-pipeline.sh
+require_grep 'temporal-list-graph-pentest-workflows' scripts/verify-mvp-pipeline.sh
 require_grep 'aegis-ai-api-gateway:crewai-fields-local' scripts/build-local-mvp-images.sh
 require_grep 'aegis-ai-brain:crewai-primary-local' scripts/build-local-mvp-images.sh
 require_grep 'aegis-ai-agent-crew:tool-runner-local' scripts/build-local-mvp-images.sh
@@ -103,3 +110,4 @@ require_grep 'api\.aegis\.mvp\.local' docs/mvp-demo-checklist.md
 require_grep 'validate-predictable-deployments\.sh' docs/mvp-demo-checklist.md
 require_grep 'verify-demo-readiness' docs/mvp-demo-checklist.md
 require_grep 'CONFIRM=terminate-stale-graph-pentest' docs/mvp-demo-checklist.md
+require_grep 'verify-mvp-pipeline' docs/superpowers/plans/2026-09-23-mvp-fin-octobre.md

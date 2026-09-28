@@ -148,6 +148,11 @@ Expected: scan reaches `COMPLETED`, Brain logs show `CrewAI pentest analysis sta
 Run: `make temporal-list-graph-pentest-workflows`
 Expected: no unexpected long-running `Running` graph workflow remains after e2e completion.
 
+- [ ] **Step 4a: Verify MVP pipeline reliability gate**
+
+Run: `TIMEOUT_SECONDS=1200 make verify-mvp-pipeline`
+Expected: ArgoCD is healthy, no image pull failures exist, the e2e scan reaches `COMPLETED`, `aegis-flag-1234` is extracted, Brain logs include `CrewAI pentest analysis status=COMPLETED` and `Stored PDF report`, sandbox cleanup evidence is present, and no `graph-pentest-workflow-*` execution remains `Running`.
+
 - [ ] **Step 5: Cleanup stale workflows only with explicit approval**
 
 Run: `CONFIRM=terminate-stale-graph-pentest make temporal-cleanup-stale-graph-pentest-workflows`
