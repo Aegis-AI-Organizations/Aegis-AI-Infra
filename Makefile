@@ -1,4 +1,4 @@
-.PHONY: setup-dns deploy-local-target delete-local-target build-local-mvp-images e2e-local-loop e2e-local-loop-port-forward temporal-list-graph-pentest-workflows temporal-cleanup-stale-graph-pentest-workflows validate-local-devops-loop
+.PHONY: setup-dns deploy-local-target delete-local-target build-local-mvp-images e2e-local-loop e2e-local-loop-port-forward verify-demo-readiness temporal-list-graph-pentest-workflows temporal-cleanup-stale-graph-pentest-workflows validate-local-devops-loop
 
 setup-dns:
 	bash scripts/setup-dns.sh
@@ -17,6 +17,9 @@ e2e-local-loop:
 
 e2e-local-loop-port-forward:
 	bash scripts/e2e-local-loop-port-forward.sh
+
+verify-demo-readiness:
+	bash scripts/verify-demo-readiness.sh
 
 temporal-list-graph-pentest-workflows:
 	bash scripts/temporal-list-graph-pentest-workflows.sh

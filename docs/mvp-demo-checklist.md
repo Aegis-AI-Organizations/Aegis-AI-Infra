@@ -11,6 +11,7 @@
 
 ## Local E2E Commands
 
+- Demo readiness gate: `TIMEOUT_SECONDS=1200 make verify-demo-readiness`.
 - DNS path: `make setup-dns && make e2e-local-loop`.
 - DNS-free fallback: `make e2e-local-loop-port-forward`.
 - Use the port-forward path when `api.aegis.mvp.local` does not resolve or routes to the wrong ingress address.
@@ -20,6 +21,7 @@
 
 ## Demo Path
 
+- Run `TIMEOUT_SECONDS=1200 make verify-demo-readiness` before the live demo to verify cluster health, e2e, Brain/CrewAI evidence, PDF report storage, and sandbox cleanup evidence.
 - Start API fallback path with `make e2e-local-loop-port-forward` for a deterministic CLI demo.
 - Confirm login succeeds through the seeded account.
 - Confirm target topology upload succeeds and a scan ID is created.
