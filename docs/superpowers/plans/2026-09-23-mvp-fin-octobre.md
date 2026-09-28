@@ -143,6 +143,11 @@ Expected: `Local DevOps loop succeeded: aegis-flag-1234 extracted.`
 Run: `kubectl -n aegis-system rollout restart deploy/brain-mvp deploy/crewai-worker-mvp && kubectl -n aegis-system rollout status deploy/brain-mvp --timeout=180s && kubectl -n aegis-system rollout status deploy/crewai-worker-mvp --timeout=180s && make e2e-local-loop-port-forward`
 Expected: scan reaches `COMPLETED`, Brain logs show `CrewAI pentest analysis status=COMPLETED`, and report generation logs include `Stored PDF report`.
 
+- [ ] **Step 3a: Verify MVP redeploy resilience gate**
+
+Run: `TIMEOUT_SECONDS=1200 make verify-mvp-redeploy-resilience`
+Expected: Brain, CrewAI worker, pentest worker, and deployer worker roll out successfully before the MVP pipeline reliability gate passes.
+
 - [ ] **Step 4: Monitor Temporal blocked workflows**
 
 Run: `make temporal-list-graph-pentest-workflows`
