@@ -10,6 +10,7 @@ deployments=(
   crewai-worker-mvp
   pentest-worker-mvp
   deployer-worker-mvp
+  api-gateway-mvp
 )
 
 require_command() {
@@ -19,17 +20,11 @@ require_command() {
   fi
 }
 
-restart_deployments() {
+restart_and_wait_for_deployments() {
   local deployment
   for deployment in "${deployments[@]}"; do
     echo "Restarting deployment/$deployment..."
     kubectl -n "$NAMESPACE" rollout restart "deploy/$deployment"
-  done
-}
-
-wait_for_rollouts() {
-  local deployment
-  for deployment in "${deployments[@]}"; do
     echo "Waiting for deployment/$deployment rollout..."
     kubectl -n "$NAMESPACE" rollout status "deploy/$deployment" --timeout="$ROLLOUT_TIMEOUT"
   done
@@ -39,8 +34,7 @@ main() {
   require_command kubectl
   require_command make
 
-  restart_deployments
-  wait_for_rollouts
+  restart_and_wait_for_deployments
   TIMEOUT_SECONDS="$TIMEOUT_SECONDS" make verify-mvp-pipeline
   echo "MVP redeploy resilience verified."
 }

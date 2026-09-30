@@ -86,12 +86,14 @@ require_grep 'Stored PDF report' scripts/verify-mvp-pipeline.sh
 require_grep 'temporal-list-graph-pentest-workflows' scripts/verify-mvp-pipeline.sh
 require_grep 'rollout restart' scripts/verify-mvp-redeploy-resilience.sh
 require_grep 'verify-mvp-pipeline' scripts/verify-mvp-redeploy-resilience.sh
+require_grep 'api-gateway-mvp' scripts/verify-mvp-redeploy-resilience.sh
 require_grep 'brain-mvp' scripts/verify-mvp-redeploy-resilience.sh
 require_grep 'crewai-worker-mvp' scripts/verify-mvp-redeploy-resilience.sh
 require_grep 'CONFIRM=fresh-mvp-cluster' scripts/verify-mvp-fresh-cluster.sh
 require_grep 'teardown-env\.sh' scripts/verify-mvp-fresh-cluster.sh
 require_grep 'setup-env\.sh' scripts/verify-mvp-fresh-cluster.sh
-require_grep 'verify-mvp-pipeline' scripts/verify-mvp-fresh-cluster.sh
+require_grep 'verify-mvp-redeploy-resilience' scripts/verify-mvp-fresh-cluster.sh
+require_grep 'MVP_PIPELINE_LOG_SINCE' scripts/verify-mvp-fresh-cluster.sh
 require_grep 'aegis-ai-api-gateway:crewai-fields-local' scripts/build-local-mvp-images.sh
 require_grep 'aegis-ai-brain:crewai-primary-local' scripts/build-local-mvp-images.sh
 require_grep 'aegis-ai-agent-crew:tool-runner-local' scripts/build-local-mvp-images.sh

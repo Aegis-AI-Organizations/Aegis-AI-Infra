@@ -146,7 +146,7 @@ Expected: scan reaches `COMPLETED`, Brain logs show `CrewAI pentest analysis sta
 - [ ] **Step 3a: Verify MVP redeploy resilience gate**
 
 Run: `TIMEOUT_SECONDS=1200 make verify-mvp-redeploy-resilience`
-Expected: Brain, CrewAI worker, pentest worker, and deployer worker roll out successfully before the MVP pipeline reliability gate passes.
+Expected: Brain, CrewAI worker, pentest worker, deployer worker, and API Gateway roll out successfully before the MVP pipeline reliability gate passes.
 
 - [ ] **Step 4: Monitor Temporal blocked workflows**
 
@@ -170,7 +170,7 @@ Run teardown/setup from scratch and verify e2e without relying on old pods or ma
 - [ ] **Step 1: Verify guarded fresh-cluster rebuild**
 
 Run: `CONFIRM=fresh-mvp-cluster TIMEOUT_SECONDS=1200 make verify-mvp-fresh-cluster`
-Expected: the local `mvp` environment is torn down, rebuilt by `setup-env.sh mvp`, and then passes `make verify-mvp-pipeline`. If the namespace is stuck in `Terminating`, the script must stop and print explicit diagnostic/finalization commands instead of forcing cleanup automatically.
+Expected: the local `mvp` environment is torn down, rebuilt by `setup-env.sh mvp`, and then passes `make verify-mvp-redeploy-resilience`. If the namespace is stuck in `Terminating`, the script must stop and print explicit diagnostic/finalization commands instead of forcing cleanup automatically.
 
 - [ ] **Week of Oct 14: Demo readiness**
 

@@ -4,6 +4,7 @@ set -euo pipefail
 ENVIRONMENT="${ENVIRONMENT:-mvp}"
 CONFIRM="${CONFIRM:-}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-1200}"
+MVP_PIPELINE_LOG_SINCE="${MVP_PIPELINE_LOG_SINCE:-4h}"
 NAMESPACE="${NAMESPACE:-aegis-system}"
 
 require_command() {
@@ -21,7 +22,7 @@ Refusing to rebuild the MVP cluster without explicit confirmation.
 This command is destructive for the local MVP environment. It runs:
 - scripts/teardown-env.sh mvp
 - scripts/setup-env.sh mvp
-- make verify-mvp-pipeline
+- make verify-mvp-redeploy-resilience
 
 Run with:
   CONFIRM=fresh-mvp-cluster TIMEOUT_SECONDS=1200 make verify-mvp-fresh-cluster
@@ -59,7 +60,7 @@ main() {
   echo "Setting up $ENVIRONMENT environment..."
   ./scripts/setup-env.sh "$ENVIRONMENT"
 
-  TIMEOUT_SECONDS="$TIMEOUT_SECONDS" make verify-mvp-pipeline
+  MVP_PIPELINE_LOG_SINCE="$MVP_PIPELINE_LOG_SINCE" TIMEOUT_SECONDS="$TIMEOUT_SECONDS" make verify-mvp-redeploy-resilience
   echo "Fresh MVP cluster verification completed."
 }
 
