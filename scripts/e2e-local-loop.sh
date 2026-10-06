@@ -13,6 +13,7 @@ SCAN_TARGET_REF="${SCAN_TARGET_REF:-}"
 EXPECTED_FLAG="${EXPECTED_FLAG:-aegis-flag-1234}"
 POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-10}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-900}"
+LOGIN_RETRY_SECONDS="${LOGIN_RETRY_SECONDS:-120}"
 CURL_INSECURE="${CURL_INSECURE:-true}"
 
 curl_flags=(-sS)
@@ -49,16 +50,26 @@ api_request() {
 }
 
 login() {
-  local response token
-  response="$(api_request -X POST "$API_BASE_URL/api/auth/login" \
-    -H "Content-Type: application/json" \
-    -d "{\"email\":\"$AEGIS_SEED_USER_EMAIL\",\"password\":\"$AEGIS_SEED_USER_PASSWORD\"}")"
-  token="$(printf '%s' "$response" | json_field access_token)"
-  if [[ -z "$token" ]]; then
-    echo "Login failed: $response" >&2
-    exit 1
-  fi
-  printf '%s\n' "$token"
+  local deadline response token
+  deadline=$((SECONDS + LOGIN_RETRY_SECONDS))
+
+  while true; do
+    response="$(api_request -X POST "$API_BASE_URL/api/auth/login" \
+      -H "Content-Type: application/json" \
+      -d "{\"email\":\"$AEGIS_SEED_USER_EMAIL\",\"password\":\"$AEGIS_SEED_USER_PASSWORD\"}")"
+    token="$(printf '%s' "$response" | json_field access_token 2>/dev/null || true)"
+    if [[ -n "$token" ]]; then
+      printf '%s\n' "$token"
+      return
+    fi
+
+    if (( SECONDS >= deadline )); then
+      echo "Login failed: $response" >&2
+      exit 1
+    fi
+
+    sleep 5
+  done
 }
 
 write_topology_artifact() {

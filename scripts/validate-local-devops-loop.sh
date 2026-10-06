@@ -74,6 +74,7 @@ require_grep '"databaseSchemas"' scripts/e2e-local-loop.sh
 require_grep '"externalMocks"' scripts/e2e-local-loop.sh
 require_grep 'AEGIS_SEED_USER_EMAIL' scripts/e2e-local-loop.sh
 require_grep 'AEGIS_SEED_USER_PASSWORD' scripts/e2e-local-loop.sh
+require_grep 'LOGIN_RETRY_SECONDS' scripts/e2e-local-loop.sh
 require_grep 'port-forward' scripts/e2e-local-loop-port-forward.sh
 require_grep 'API_BASE_URL="http://127\.0\.0\.1' scripts/e2e-local-loop-port-forward.sh
 require_grep 'CrewAI pentest analysis status=COMPLETED' scripts/verify-demo-readiness.sh
@@ -84,6 +85,7 @@ require_grep 'aegis-flag-1234' scripts/verify-mvp-pipeline.sh
 require_grep 'CrewAI pentest analysis status=COMPLETED' scripts/verify-mvp-pipeline.sh
 require_grep 'Stored PDF report' scripts/verify-mvp-pipeline.sh
 require_grep 'temporal-list-graph-pentest-workflows' scripts/verify-mvp-pipeline.sh
+require_grep 'ARGOCD_HEALTH_TIMEOUT' scripts/verify-mvp-pipeline.sh
 require_grep 'rollout restart' scripts/verify-mvp-redeploy-resilience.sh
 require_grep 'verify-mvp-pipeline' scripts/verify-mvp-redeploy-resilience.sh
 require_grep 'api-gateway-mvp' scripts/verify-mvp-redeploy-resilience.sh

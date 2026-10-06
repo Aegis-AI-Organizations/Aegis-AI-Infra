@@ -1,4 +1,5 @@
 .terraform/
+.DS_Store
 *.tfstate
 *.tfstate.backup
 .env
@@ -8,3 +9,4 @@ local-dev/cloudflared/cert.pem
 local-dev/certs/
 kubernetes/envs/mvp/infrastructure/cloudflared/credentials.json
 graphify-out/
+brag-output-*/

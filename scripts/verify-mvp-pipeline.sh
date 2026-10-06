@@ -5,6 +5,7 @@ NAMESPACE="${NAMESPACE:-aegis-system}"
 ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
 LOG_SINCE="${MVP_PIPELINE_LOG_SINCE:-30m}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-1200}"
+ARGOCD_HEALTH_TIMEOUT="${ARGOCD_HEALTH_TIMEOUT:-180}"
 EXPECTED_FLAG="${EXPECTED_FLAG:-aegis-flag-1234}"
 
 critical_apps=(
@@ -23,16 +24,30 @@ require_command() {
 }
 
 assert_argocd_healthy() {
-  local app sync health
-  for app in "${critical_apps[@]}"; do
-    sync="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.sync.status}')"
-    health="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.health.status}')"
-    if [[ "$sync" != "Synced" || "$health" != "Healthy" ]]; then
+  local app sync health deadline
+  deadline=$((SECONDS + ARGOCD_HEALTH_TIMEOUT))
+
+  while true; do
+    for app in "${critical_apps[@]}"; do
+      sync="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.sync.status}')"
+      health="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.health.status}')"
+      if [[ "$sync" != "Synced" || "$health" != "Healthy" ]]; then
+        break
+      fi
+    done
+
+    if [[ "$sync" == "Synced" && "$health" == "Healthy" ]]; then
+      echo "ArgoCD critical applications are Synced/Healthy."
+      return
+    fi
+
+    if (( SECONDS >= deadline )); then
       echo "ArgoCD application $app is $sync/$health, expected Synced/Healthy" >&2
       exit 1
     fi
+
+    sleep 5
   done
-  echo "ArgoCD critical applications are Synced/Healthy."
 }
 
 assert_no_image_pull_errors() {
