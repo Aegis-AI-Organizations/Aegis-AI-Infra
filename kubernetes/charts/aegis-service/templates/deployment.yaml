@@ -5,6 +5,10 @@ metadata:
   labels:
     app: {{ .Values.nameOverride | default .Release.Name }}
 spec:
+  {{- with .Values.deploymentStrategy }}
+  strategy:
+{{ toYaml . | indent 4 }}
+  {{- end }}
   {{- if not .Values.keda.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
@@ -20,6 +24,10 @@ spec:
 {{ toYaml .Values.annotations | indent 8 }}
       {{- end }}
     spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+      {{- end }}
       {{- if .Values.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- end }}

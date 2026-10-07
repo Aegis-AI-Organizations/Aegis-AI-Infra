@@ -1,0 +1,53 @@
+{{- if .Values.cmsMailpit }}
+{{- if .Values.cmsMailpit.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.nameOverride }}-mailpit
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: {{ .Values.nameOverride }}-mailpit}
+  template:
+    metadata:
+      labels: {app: {{ .Values.nameOverride }}-mailpit}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: mailpit
+          image: {{ .Values.cmsMailpit.image | quote }}
+          ports:
+            - {name: smtp, containerPort: 1025}
+            - {name: web, containerPort: 8025}
+          resources:
+            requests: {cpu: 25m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 128Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nameOverride }}-mailpit
+spec:
+  type: ClusterIP
+  selector: {app: {{ .Values.nameOverride }}-mailpit}
+  ports:
+    - {name: smtp, port: 1025, targetPort: smtp}
+    - {name: web, port: 8025, targetPort: web}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.nameOverride }}-mailpit
+spec:
+  podSelector:
+    matchLabels: {app: {{ .Values.nameOverride }}-mailpit}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app: {{ .Values.nameOverride }}}
+      ports:
+        - {port: 1025, protocol: TCP}
+  egress: []
+{{- end }}
+{{- end }}

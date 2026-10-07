@@ -1,0 +1,19 @@
+{{- if .Values.cmsStorage }}
+{{- if .Values.cmsStorage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.nameOverride }}-content
+  annotations:
+    helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.cmsStorage.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.cmsStorage.size | quote }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,61 @@
+# Opt-in overlay: append AFTER values.yaml once the CMS image and secret exist.
+# Keep the current Application unchanged until the rollout prerequisites are met.
+replicaCount: 1
+deploymentStrategy:
+  type: Recreate
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+serviceAccount:
+  automountToken: false
+cmsStorage:
+  enabled: true
+  size: 5Gi
+  storageClassName: local-path
+cmsMailpit:
+  enabled: true
+  image: axllent/mailpit:v1.31.4
+volumes:
+  - name: content
+    persistentVolumeClaim:
+      claimName: landing-mvp-content
+volumeMounts:
+  - name: content
+    mountPath: /app/data
+envFrom:
+  - secretRef:
+      name: landing-cms-config
+env:
+  - {name: PORT, value: "3000"}
+  - {name: SITE_URL, value: "https://aegis-ai.fr"}
+  - {name: DATABASE_URI, value: "file:/app/data/aegis-content.db"}
+  - {name: MEDIA_DIR, value: "/app/data/media"}
+  - {name: SMTP_HOST, value: "landing-mvp-mailpit"}
+  - {name: SMTP_PORT, value: "1025"}
+  - {name: SMTP_FROM_ADDRESS, value: "noreply@aegis.test"}
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: "1", memory: 1Gi}
+networkPolicy:
+  enabled: true
+  allowDNS: true
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: aegis-edge-proxy
+      ports:
+        - {port: 3000, protocol: TCP}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: landing-mvp-mailpit
+      ports:
+        - {port: 1025, protocol: TCP}
