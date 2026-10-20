@@ -39,6 +39,8 @@ PROBE_TIMEOUT="${PROBE_TIMEOUT:-8}"
 PASS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
+# Scan ID substituted into the external-api-mock pod selector (mirrors aegis-scan label in deployer).
+SANDBOX_SCAN_ID="${SANDBOX_SCAN_ID:-test-multitenant}"
 
 # Positive control flags: set to "true" after DNS check succeeds per namespace.
 DNS_OK_A=false
@@ -91,9 +93,12 @@ cleanup() {
 }
 
 # Apply the deployer's default-deny-egress NetworkPolicy to a namespace.
+# Mirrors createSandboxNetworkPolicy in kubernetes_resources.go (two egress rules).
+# The external-api-mock rule is inert in test context: no such pods exist.
 apply_sandbox_netpolicy() {
   local ns="$1"
-  kubectl apply -n "$ns" -f - <<'POLICY'
+  local scan_id="${2:-$SANDBOX_SCAN_ID}"
+  kubectl apply -n "$ns" -f - <<POLICY
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -110,6 +115,22 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
       ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app: external-api-mock
+              app.kubernetes.io/name: external-api-mock
+              app.kubernetes.io/managed-by: aegis-worker-deployer
+              aegis-scan: "$scan_id"
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
         - protocol: UDP
           port: 53
         - protocol: TCP
