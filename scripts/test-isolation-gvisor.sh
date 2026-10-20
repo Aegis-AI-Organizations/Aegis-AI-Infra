@@ -34,6 +34,8 @@ PROBE_IMAGE="${PROBE_IMAGE:-busybox:1.36.0}"
 PASS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
+ENV_FAIL_COUNT=0
+POD_RAN=false
 
 exec > >(tee -a "$REPORT_FILE") 2>&1
 
@@ -43,6 +45,7 @@ section() { printf '\n== %s ==\n' "$1"; }
 pass()    { printf '[PASS] %s\n' "$1"; PASS_COUNT=$((PASS_COUNT + 1)); }
 fail()    { printf '[FAIL] %s\n' "$1"; FAIL_COUNT=$((FAIL_COUNT + 1)); }
 skip()    { printf '[SKIP] %s\n' "$1"; SKIP_COUNT=$((SKIP_COUNT + 1)); }
+env_fail() { printf '[ENV-FAIL] %s\n' "$1"; ENV_FAIL_COUNT=$((ENV_FAIL_COUNT + 1)); }
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || { printf 'Missing required command: %s\n' "$1" >&2; exit 127; }
@@ -68,6 +71,22 @@ check_allowed_context() {
     printf 'WARNING: AEGIS_ALLOWED_CONTEXT is not set — running on "%s" without context guard.\n' "$ctx"
     printf '         Export AEGIS_ALLOWED_CONTEXT="%s" to enforce safety.\n\n' "$ctx"
   fi
+}
+
+is_env_failure() {
+  local ns="$1" pod="$2"
+  if kubectl get events -n "$ns" \
+      --field-selector "involvedObject.name=$pod" \
+      2>/dev/null \
+      | grep -qiE 'RuntimeHandler|runsc'; then
+    return 0
+  fi
+  if kubectl get pod "$pod" -n "$ns" \
+      -o jsonpath='{.status.message}' 2>/dev/null \
+      | grep -qiE 'RuntimeHandler|runsc'; then
+    return 0
+  fi
+  return 1
 }
 
 cleanup() {
@@ -165,22 +184,31 @@ if wait_pod_terminal "$TEST_NS" "$TEST_POD" 120; then
   phase="$(kubectl get pod "$TEST_POD" -n "$TEST_NS" -o jsonpath='{.status.phase}' 2>/dev/null || echo "")"
   if [[ "$phase" == "Succeeded" ]]; then
     pass "Pod scheduled and ran successfully under runtimeClassName: gvisor"
+    POD_RAN=true
   else
     reason="$(kubectl get pod "$TEST_POD" -n "$TEST_NS" \
-      -o jsonpath='{.status.containerStatuses[0].state.terminated.reason}' 2>/dev/null || echo "unknown")"
-    fail "Pod reached phase=$phase (reason: $reason) — gVisor may not be installed on cluster nodes"
+      -o jsonpath='{.status.containerStatuses[0].state.terminated.reason}' 2>/dev/null || echo "")"
     printf '\nScheduler events for this pod:\n'
     kubectl get events -n "$TEST_NS" \
       --field-selector "involvedObject.name=$TEST_POD" \
       --sort-by=.lastTimestamp 2>/dev/null || true
+    if is_env_failure "$TEST_NS" "$TEST_POD"; then
+      env_fail "RuntimeHandler 'runsc' not supported on this node — install gVisor (runsc) on cluster nodes"
+    else
+      fail "Pod reached phase=$phase (reason: ${reason:-unknown}) — check gVisor installation"
+    fi
   fi
 else
   phase="$(kubectl get pod "$TEST_POD" -n "$TEST_NS" -o jsonpath='{.status.phase}' 2>/dev/null || echo "unknown")"
-  fail "Pod timed out waiting for terminal phase (current: $phase) — gVisor scheduler may be unavailable"
   printf '\nScheduler events for this pod:\n'
   kubectl get events -n "$TEST_NS" \
     --field-selector "involvedObject.name=$TEST_POD" \
     --sort-by=.lastTimestamp 2>/dev/null || true
+  if is_env_failure "$TEST_NS" "$TEST_POD"; then
+    env_fail "RuntimeHandler 'runsc' not supported on this node — install gVisor (runsc) on cluster nodes"
+  else
+    fail "Pod timed out waiting for terminal phase (current: $phase) — gVisor scheduler may be unavailable"
+  fi
 fi
 
 # ── Test 4: runtimeClassName confirmed in pod spec ─────────────────────────────
@@ -199,48 +227,57 @@ fi
 # sandboxing (handler misconfigured or pod ran on host kernel).
 # /proc/version provides a second signal: gVisor reports a distinct version string.
 section "Test 5 — gVisor kernel identity (pod kernel ≠ host kernel)"
-logs="$(kubectl logs "$TEST_POD" -n "$TEST_NS" 2>/dev/null || echo "")"
-
-if ! printf '%s' "$logs" | grep -q 'AEGIS_GVISOR_OK'; then
-  fail "Expected 'AEGIS_GVISOR_OK' in pod logs — pod may not have completed (logs: ${logs:-<empty>})"
+if [[ "$POD_RAN" != "true" ]]; then
+  skip "Test 5 requires pod to have run under gVisor — test 3 did not produce a Succeeded pod"
 else
-  host_kernel="$(uname -r)"
-  pod_kernel="$(printf '%s' "$logs" | head -1)"
-  proc_version="$(printf '%s' "$logs" | grep -v 'AEGIS_GVISOR_OK' | tail -1 || echo "")"
+  logs="$(kubectl logs "$TEST_POD" -n "$TEST_NS" 2>/dev/null || echo "")"
 
-  printf '[INFO] Host kernel     : %s\n' "$host_kernel"
-  printf '[INFO] Pod  kernel     : %s\n' "${pod_kernel:-<empty>}"
-  if [[ -n "$proc_version" ]] && [[ "$proc_version" != "$pod_kernel" ]]; then
-    printf '[INFO] /proc/version   : %s\n' "$proc_version"
-  fi
-
-  if [[ -z "$pod_kernel" ]]; then
-    fail "Could not parse pod kernel version from logs"
-  elif [[ "$pod_kernel" == "$host_kernel" ]]; then
-    fail "Pod kernel ($pod_kernel) matches host kernel — gVisor sandbox not active (handler may be misconfigured)"
+  if ! printf '%s' "$logs" | grep -q 'AEGIS_GVISOR_OK'; then
+    fail "Expected 'AEGIS_GVISOR_OK' in pod logs — pod may not have completed (logs: ${logs:-<empty>})"
   else
-    pass "Pod kernel ($pod_kernel) differs from host ($host_kernel) — gVisor sandbox is active"
-    # Second signal: gVisor /proc/version contains "gvisor" or a known stub string.
-    if [[ -n "$proc_version" ]]; then
-      if printf '%s' "$proc_version" | grep -qiE 'gvisor|runsc|stub'; then
-        pass "/proc/version confirms gVisor runtime (second signal)"
-      else
-        printf '[INFO] /proc/version does not contain gvisor/runsc marker — kernel diff alone is the evidence\n'
+    host_kernel="$(uname -r)"
+    pod_kernel="$(printf '%s' "$logs" | head -1)"
+    proc_version="$(printf '%s' "$logs" | grep -v 'AEGIS_GVISOR_OK' | tail -1 || echo "")"
+
+    printf '[INFO] Host kernel     : %s\n' "$host_kernel"
+    printf '[INFO] Pod  kernel     : %s\n' "${pod_kernel:-<empty>}"
+    if [[ -n "$proc_version" ]] && [[ "$proc_version" != "$pod_kernel" ]]; then
+      printf '[INFO] /proc/version   : %s\n' "$proc_version"
+    fi
+
+    if [[ -z "$pod_kernel" ]]; then
+      fail "Could not parse pod kernel version from logs"
+    elif [[ "$pod_kernel" == "$host_kernel" ]]; then
+      fail "Pod kernel ($pod_kernel) matches host kernel — gVisor sandbox not active (handler may be misconfigured)"
+    else
+      pass "Pod kernel ($pod_kernel) differs from host ($host_kernel) — gVisor sandbox is active"
+      # Second signal: gVisor /proc/version contains "gvisor" or a known stub string.
+      if [[ -n "$proc_version" ]]; then
+        if printf '%s' "$proc_version" | grep -qiE 'gvisor|runsc|stub'; then
+          pass "/proc/version confirms gVisor runtime (second signal)"
+        else
+          printf '[INFO] /proc/version does not contain gvisor/runsc marker — kernel diff alone is the evidence\n'
+        fi
       fi
     fi
   fi
 fi
 
 section "Summary"
-TOTAL=$((PASS_COUNT + FAIL_COUNT))
-printf 'PASS  : %d\n' "$PASS_COUNT"
-printf 'FAIL  : %d\n' "$FAIL_COUNT"
-printf 'SKIP  : %d\n' "$SKIP_COUNT"
-printf 'TOTAL : %d / %d\n' "$PASS_COUNT" "$TOTAL"
+TOTAL=$((PASS_COUNT + FAIL_COUNT + ENV_FAIL_COUNT))
+printf 'PASS     : %d\n' "$PASS_COUNT"
+printf 'FAIL     : %d\n' "$FAIL_COUNT"
+printf 'ENV-FAIL : %d  (environment issue — not a test logic failure)\n' "$ENV_FAIL_COUNT"
+printf 'SKIP     : %d\n' "$SKIP_COUNT"
+printf 'TOTAL    : %d / %d\n' "$PASS_COUNT" "$TOTAL"
 printf 'Report: %s\n' "$REPORT_FILE"
 
 if [[ "$FAIL_COUNT" -gt 0 ]]; then
   printf '\nResult: FAIL\n'
   exit 1
+fi
+if [[ "$ENV_FAIL_COUNT" -gt 0 ]]; then
+  printf '\nResult: ENV-FAIL (gVisor not installed on cluster nodes — install runsc to enable sandbox)\n'
+  exit 3
 fi
 printf '\nResult: PASS\n'
