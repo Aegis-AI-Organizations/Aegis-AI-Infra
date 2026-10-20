@@ -60,6 +60,11 @@ require_command() {
   command -v "$1" >/dev/null 2>&1 || { printf 'Missing required command: %s\n' "$1" >&2; exit 127; }
 }
 
+on_error() {
+  printf '\n[ERROR] Script aborted at line %s. Partial results: PASS=%d FAIL=%d. Report: %s\n' \
+    "${1:-?}" "$PASS_COUNT" "$FAIL_COUNT" "$REPORT_FILE" >&2
+}
+
 # P2: enforce context guard.
 check_allowed_context() {
   local ctx
@@ -232,6 +237,7 @@ assert_cross_blocked() {
 
 require_command kubectl
 check_allowed_context
+trap 'on_error $LINENO' ERR
 
 section "Aegis Isolation Test: Cross-Tenant Network Isolation"
 printf 'Kubernetes context : %s\n' "$(kubectl config current-context 2>/dev/null || echo unknown)"

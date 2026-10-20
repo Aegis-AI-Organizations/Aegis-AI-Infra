@@ -53,6 +53,11 @@ require_command() {
   command -v "$1" >/dev/null 2>&1 || { printf 'Missing required command: %s\n' "$1" >&2; exit 127; }
 }
 
+on_error() {
+  printf '\n[ERROR] Script aborted at line %s. Partial results: PASS=%d FAIL=%d GAP=%d. Report: %s\n' \
+    "${1:-?}" "$PASS_COUNT" "$FAIL_COUNT" "$GAP_COUNT" "$REPORT_FILE" >&2
+}
+
 # P2: enforce context guard.
 check_allowed_context() {
   local ctx
@@ -86,6 +91,7 @@ delete_pod_if_exists() {
 
 require_command kubectl
 check_allowed_context
+trap 'on_error $LINENO' ERR
 
 section "Aegis Isolation Test: ResourceQuota and LimitRange"
 printf 'Kubernetes context : %s\n' "$(kubectl config current-context 2>/dev/null || echo unknown)"
@@ -250,7 +256,7 @@ else
 fi
 
 section "Summary"
-TOTAL=$((PASS_COUNT + FAIL_COUNT))
+TOTAL=$((PASS_COUNT + FAIL_COUNT + GAP_COUNT))
 printf 'PASS  : %d\n' "$PASS_COUNT"
 printf 'FAIL  : %d\n' "$FAIL_COUNT"
 printf 'GAP   : %d  (deployer must be updated — see details above)\n' "$GAP_COUNT"
@@ -263,7 +269,7 @@ if [[ "$FAIL_COUNT" -gt 0 ]]; then
   exit 1
 fi
 if [[ "$GAP_COUNT" -gt 0 ]]; then
-  printf '\nResult: PASS (with %d infrastructure gap(s) requiring deployer update)\n' "$GAP_COUNT"
-  exit 0
+  printf '\nResult: PASS WITH GAPS (%d gap(s) — deployer update required)\n' "$GAP_COUNT"
+  exit 3
 fi
 printf '\nResult: PASS\n'

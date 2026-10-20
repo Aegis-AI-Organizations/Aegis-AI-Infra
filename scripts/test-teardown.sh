@@ -64,6 +64,11 @@ require_command() {
   command -v "$1" >/dev/null 2>&1 || { printf 'Missing required command: %s\n' "$1" >&2; exit 127; }
 }
 
+on_error() {
+  printf '\n[ERROR] Script aborted at line %s. Partial results: PASS=%d FAIL=%d. Report: %s\n' \
+    "${1:-?}" "$PASS_COUNT" "$FAIL_COUNT" "$REPORT_FILE" >&2
+}
+
 # P2: enforce context guard.
 check_allowed_context() {
   local ctx
@@ -119,11 +124,12 @@ emergency_teardown() {
   printf 'Kubernetes context: %s\n' "$ctx"
   printf 'WARNING: this is destructive and irreversible.\n\n'
 
-  mapfile -t orphans < <(
-    kubectl get namespaces -o name 2>/dev/null \
-      | grep "namespace/${WAR_ROOM_PREFIX}" \
-      | sed 's|namespace/||'
-  )
+  orphans=()
+  while IFS= read -r _ns; do
+    [[ -n "$_ns" ]] && orphans+=("$_ns")
+  done < <(kubectl get namespaces -o name 2>/dev/null \
+    | grep "namespace/${WAR_ROOM_PREFIX}" \
+    | sed 's|namespace/||' || true)
 
   if [[ ${#orphans[@]} -eq 0 ]]; then
     printf 'No %s* namespaces found. Nothing to do.\n' "$WAR_ROOM_PREFIX"
@@ -185,6 +191,7 @@ emergency_teardown() {
 
 require_command kubectl
 check_allowed_context
+trap 'on_error $LINENO' ERR
 
 if $EMERGENCY; then
   emergency_teardown
@@ -282,11 +289,12 @@ fi
 
 # ── Test 4: Emergency dry-run — list what would be deleted ────────────────────
 section "Test 4 — Emergency dry-run: list aegis-war-room-* namespaces"
-mapfile -t candidates < <(
-  kubectl get namespaces -o name 2>/dev/null \
-    | grep "namespace/${WAR_ROOM_PREFIX}" \
-    | sed 's|namespace/||' || true
-)
+candidates=()
+while IFS= read -r _ns; do
+  [[ -n "$_ns" ]] && candidates+=("$_ns")
+done < <(kubectl get namespaces -o name 2>/dev/null \
+  | grep "namespace/${WAR_ROOM_PREFIX}" \
+  | sed 's|namespace/||' || true)
 if [[ ${#candidates[@]} -eq 0 ]]; then
   pass "No orphaned ${WAR_ROOM_PREFIX}* namespaces found (clean state)"
 else
@@ -300,11 +308,12 @@ fi
 
 # ── Test 5: Residual check ─────────────────────────────────────────────────────
 section "Test 5 — Residual check: no aegis-war-room-test-* namespaces remain"
-mapfile -t residuals < <(
-  kubectl get namespaces -o name 2>/dev/null \
-    | grep "namespace/aegis-war-room-test-" \
-    | sed 's|namespace/||' || true
-)
+residuals=()
+while IFS= read -r _ns; do
+  [[ -n "$_ns" ]] && residuals+=("$_ns")
+done < <(kubectl get namespaces -o name 2>/dev/null \
+  | grep "namespace/aegis-war-room-test-" \
+  | sed 's|namespace/||' || true)
 if [[ ${#residuals[@]} -eq 0 ]]; then
   pass "No aegis-war-room-test-* namespaces remain"
 else
