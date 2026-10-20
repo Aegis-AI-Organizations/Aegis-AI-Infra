@@ -56,6 +56,8 @@ env:
     value: "aegis-ingest"
   - name: AEGIS_IMAGE_IMPORT_COMMAND
     value: "docker load -i {archive}"
+  - name: SANDBOX_RUNTIME_CLASS
+    value: "gvisor"
 
 volumeMounts:
   - name: temporal-tls
