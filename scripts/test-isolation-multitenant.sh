@@ -114,6 +114,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
       ports:
         - protocol: UDP
           port: 53
@@ -207,7 +210,7 @@ probe_dns() {
     --restart=Never \
     --image="$PROBE_IMAGE" \
     --timeout=60s \
-    -- sh -c "nslookup kubernetes.default.svc.cluster.local >/dev/null" \
+    -- sh -c "nslookup kubernetes.default.svc.cluster.local 2>&1 | grep -q 'Server:'" \
     >/dev/null 2>&1
 }
 

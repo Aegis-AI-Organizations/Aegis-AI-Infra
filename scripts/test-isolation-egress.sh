@@ -185,6 +185,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
       ports:
         - protocol: UDP
           port: 53
@@ -213,7 +216,7 @@ printf 'NetworkPolicy default-deny-egress applied\n'
 # Proves the probe pod can start and DNS egress is functional. If this fails,
 # a timeout on a blocking test is not proof of isolation.
 section "Positive control — DNS (prerequisite for blocking tests)"
-if probe "positive-ctrl-dns" "nslookup kubernetes.default.svc.cluster.local >/dev/null"; then
+if probe "positive-ctrl-dns" "nslookup kubernetes.default.svc.cluster.local 2>&1 | grep -q 'Server:'"; then
   pass "Positive control: probe pod healthy, DNS to kube-system:53 works"
   POSITIVE_CONTROL_OK=true
 else
@@ -255,7 +258,7 @@ fi
 # 6. DNS to kube-system:53 must be allowed (explicit test, also serves as positive control)
 assert_allowed \
   "DNS resolution via kube-system:53" \
-  "nslookup kubernetes.default.svc.cluster.local >/dev/null"
+  "nslookup kubernetes.default.svc.cluster.local 2>&1 | grep -q 'Server:'"
 
 section "Summary"
 TOTAL=$((PASS_COUNT + FAIL_COUNT))
