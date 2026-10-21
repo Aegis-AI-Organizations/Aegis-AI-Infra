@@ -198,42 +198,64 @@ wait_pod_running() {
   return 1
 }
 
-# P4: positive control — verify DNS works from a namespace (probe pod can start
-# and the allowed egress to kube-system:53 is functional).
-# Returns 0 if DNS works, non-0 otherwise.
+# P4: positive control — verify DNS works from a namespace.
+# Returns:
+#   0 — DNS server responded (Server: line in nslookup output)
+#   1 — DNS timed out / blocked
+#   2 — kubectl pre-pod failure (ENV); -i required for --rm without -t
 probe_dns() {
   local ns="$1"
   local pod_name="aegis-probe-dns-$$"
-  kubectl run "$pod_name" \
+  local kube_stderr=""
+  local rc=0
+  kube_stderr="$(kubectl run "$pod_name" \
     -n "$ns" \
+    -i \
     --rm \
     --restart=Never \
     --image="$PROBE_IMAGE" \
     --timeout=60s \
     -- sh -c "nslookup kubernetes.default.svc.cluster.local 2>&1 | grep -q 'Server:'" \
-    >/dev/null 2>&1
+    </dev/null 2>&1 >/dev/null)" || rc=$?
+  if printf '%s' "$kube_stderr" | grep -q '^error:'; then
+    printf '[ENV] probe_dns %s: kubectl pre-pod failure: %s\n' "$ns" "$kube_stderr" >&2
+    return 2
+  fi
+  return "$rc"
 }
 
 # Run a transient probe from src_ns trying to reach target (host:port).
-# Returns 0 if connection succeeded, non-zero if blocked/timed-out.
+# Returns:
+#   0 — connection succeeded
+#   1 — blocked / timed out (valid block signal)
+#   2 — kubectl pre-pod failure (ENV)
 probe_cross() {
   local src_ns="$1"
   local target_host="$2"
   local target_port="${3:-8080}"
   local pod_name="aegis-probe-cross-$$"
-
-  kubectl run "$pod_name" \
+  local kube_stderr=""
+  local rc=0
+  kube_stderr="$(kubectl run "$pod_name" \
     -n "$src_ns" \
+    -i \
     --rm \
     --restart=Never \
     --image="$PROBE_IMAGE" \
     --timeout=120s \
     -- sh -c "nc -z -w${PROBE_TIMEOUT} ${target_host} ${target_port}" \
-    >/dev/null 2>&1
+    </dev/null 2>&1 >/dev/null)" || rc=$?
+  if printf '%s' "$kube_stderr" | grep -q '^error:'; then
+    printf '[ENV] probe_cross %s→%s:%s: kubectl pre-pod failure: %s\n' \
+      "$src_ns" "$target_host" "$target_port" "$kube_stderr" >&2
+    return 2
+  fi
+  return "$rc"
 }
 
 # Assert a cross-namespace connection is blocked, gated on positive control.
 # $1=label $2=src_ns $3=target_host $4=target_port $5=dns_ok_var $6=target_ready_var
+# probe_cross rc=2 (ENV) → SKIP (cannot distinguish block from kubectl failure).
 assert_cross_blocked() {
   local label="$1"
   local src_ns="$2"
@@ -250,11 +272,13 @@ assert_cross_blocked() {
     skip "$label — target pod not Running: blocking result inconclusive"
     return
   fi
-  if probe_cross "$src_ns" "$target_host" "$target_port"; then
-    fail "$label — connection succeeded (cross-tenant egress must be blocked)"
-  else
-    pass "$label — egress blocked"
-  fi
+  local rc=0
+  probe_cross "$src_ns" "$target_host" "$target_port" || rc=$?
+  case "$rc" in
+    0) fail "$label — connection succeeded (cross-tenant egress must be blocked)" ;;
+    2) skip "$label — kubectl pre-pod failure (ENV): cannot determine if egress is blocked" ;;
+    *) pass "$label — egress blocked" ;;
+  esac
 }
 
 # ── main ───────────────────────────────────────────────────────────────────────
@@ -310,20 +334,25 @@ printf 'Service ClusterIP A: %s\n' "${IP_A:-<unavailable>}"
 printf 'Service ClusterIP B: %s\n' "${IP_B:-<unavailable>}"
 
 # P4: Positive controls — verify probe pod can start and DNS works from each namespace.
+# probe_dns rc=2 (ENV) means kubectl failed before the pod ran (SKIP, not FAIL).
 section "Positive Controls — DNS reachability from each namespace"
-if probe_dns "$NS_A"; then
-  pass "Positive control: DNS works from NS_A (probe pod healthy, kube-system:53 reachable)"
-  DNS_OK_A=true
-else
-  fail "Positive control: DNS failed from NS_A — tests probing FROM NS_A will be SKIP"
-fi
+_dns_rc=0
+probe_dns "$NS_A" || _dns_rc=$?
+case "$_dns_rc" in
+  0) pass "Positive control: DNS works from NS_A (probe pod healthy, kube-system:53 reachable)"
+     DNS_OK_A=true ;;
+  2) skip "Positive control: kubectl pre-pod failure from NS_A (ENV) — NS_A tests will be SKIP" ;;
+  *) fail "Positive control: DNS failed from NS_A — tests probing FROM NS_A will be SKIP" ;;
+esac
 
-if probe_dns "$NS_B"; then
-  pass "Positive control: DNS works from NS_B (probe pod healthy, kube-system:53 reachable)"
-  DNS_OK_B=true
-else
-  fail "Positive control: DNS failed from NS_B — tests probing FROM NS_B will be SKIP"
-fi
+_dns_rc=0
+probe_dns "$NS_B" || _dns_rc=$?
+case "$_dns_rc" in
+  0) pass "Positive control: DNS works from NS_B (probe pod healthy, kube-system:53 reachable)"
+     DNS_OK_B=true ;;
+  2) skip "Positive control: kubectl pre-pod failure from NS_B (ENV) — NS_B tests will be SKIP" ;;
+  *) fail "Positive control: DNS failed from NS_B — tests probing FROM NS_B will be SKIP" ;;
+esac
 
 section "Cross-Tenant Tests"
 

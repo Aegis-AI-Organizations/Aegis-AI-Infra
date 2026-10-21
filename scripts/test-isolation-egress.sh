@@ -97,25 +97,38 @@ cleanup() {
 }
 
 # Run a one-shot probe pod in TEST_NS.
-# Returns 0 if the probe command exits 0, non-zero otherwise.
+# Returns:
+#   0 — pod ran, command succeeded (connection open)
+#   1 — pod ran, command failed  (connection blocked — valid block signal)
+#   2 — kubectl failed before the pod ran (ENV failure, e.g. --rm/-i error)
+# The -i flag satisfies kubectl's requirement that --rm is used with attached
+# containers. </dev/null closes stdin so kubectl does not wait for TTY input.
 probe() {
   local label="$1"
   local cmd="$2"
   local pod_name
   pod_name="aegis-probe-$(printf '%s' "$label" | tr -dc 'a-z0-9' | cut -c1-12)-$$"
-  kubectl run "$pod_name" \
+  local kube_stderr=""
+  local rc=0
+  kube_stderr="$(kubectl run "$pod_name" \
     -n "$TEST_NS" \
+    -i \
     --rm \
     --restart=Never \
     --image="$PROBE_IMAGE" \
     --timeout=120s \
     -- sh -c "$cmd" \
-    >/dev/null 2>&1
+    </dev/null 2>&1 >/dev/null)" || rc=$?
+  if printf '%s' "$kube_stderr" | grep -q '^error:'; then
+    printf '[ENV] %s: kubectl pre-pod failure: %s\n' "$label" "$kube_stderr" >&2
+    return 2
+  fi
+  return "$rc"
 }
 
 # P4: assert_blocked gates on the positive control.
-# If the positive control failed, the probe pod may not start at all, making a
-# non-zero exit indistinguishable from a genuine network block.
+# probe() rc=2 (ENV) means kubectl failed before the pod ran — the block
+# cannot be validated (SKIP). A valid block is rc!=0 and rc!=2 (case c).
 assert_blocked() {
   local label="$1"
   local cmd="$2"
@@ -123,22 +136,27 @@ assert_blocked() {
     skip "$label — positive control (DNS) failed: blocking result inconclusive"
     return
   fi
-  if probe "$label" "$cmd"; then
-    fail "$label — connection succeeded (expected blocked)"
-  else
-    pass "$label — egress blocked"
-  fi
+  local rc=0
+  probe "$label" "$cmd" || rc=$?
+  case "$rc" in
+    0) fail "$label — connection succeeded (expected blocked)" ;;
+    2) skip "$label — kubectl pre-pod failure (ENV): cannot determine if egress is blocked" ;;
+    *) pass "$label — egress blocked" ;;
+  esac
 }
 
 # assert_allowed: pass when the probe command exits 0.
+# probe() rc=2 (ENV) means kubectl failed before the pod ran (SKIP).
 assert_allowed() {
   local label="$1"
   local cmd="$2"
-  if probe "$label" "$cmd"; then
-    pass "$label — traffic allowed"
-  else
-    fail "$label — connection failed (expected allowed)"
-  fi
+  local rc=0
+  probe "$label" "$cmd" || rc=$?
+  case "$rc" in
+    0) pass "$label — traffic allowed" ;;
+    2) skip "$label — kubectl pre-pod failure (ENV): cannot verify traffic is allowed" ;;
+    *) fail "$label — connection failed (expected allowed)" ;;
+  esac
 }
 
 # ── main ───────────────────────────────────────────────────────────────────────
@@ -216,13 +234,16 @@ printf 'NetworkPolicy default-deny-egress applied\n'
 # Proves the probe pod can start and DNS egress is functional. If this fails,
 # a timeout on a blocking test is not proof of isolation.
 section "Positive control — DNS (prerequisite for blocking tests)"
-if probe "positive-ctrl-dns" "nslookup kubernetes.default.svc.cluster.local 2>&1 | grep -q 'Server:'"; then
-  pass "Positive control: probe pod healthy, DNS to kube-system:53 works"
-  POSITIVE_CONTROL_OK=true
-else
-  fail "Positive control: DNS failed — probe pod may not start or kube-system:53 unreachable"
-  printf 'NOTE: All blocking tests (1-5) will be SKIP until this is resolved.\n'
-fi
+_pc_rc=0
+probe "positive-ctrl-dns" "nslookup kubernetes.default.svc.cluster.local 2>&1 | grep -q 'Server:'" || _pc_rc=$?
+case "$_pc_rc" in
+  0) pass "Positive control: probe pod healthy, DNS to kube-system:53 works"
+     POSITIVE_CONTROL_OK=true ;;
+  2) skip "Positive control: kubectl pre-pod failure (ENV) — blocking tests will be SKIP"
+     printf 'NOTE: Check kubectl version; -i flag required for --rm with --restart=Never.\n' ;;
+  *) fail "Positive control: DNS failed — probe pod may not start or kube-system:53 unreachable"
+     printf 'NOTE: All blocking tests (1-5) will be SKIP until this is resolved.\n' ;;
+esac
 
 section "Egress Tests"
 

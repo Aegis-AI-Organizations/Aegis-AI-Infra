@@ -78,7 +78,7 @@ scripts/test-isolation-egress.sh
 #    Result: FAIL
 ```
 
-**Résultat attendu si contrôle positif OK** : tous les tests de blocage → `[FAIL]`  
+**Résultat attendu si contrôle positif OK** : tous les tests de blocage → `[FAIL]`
 **Résultat interdit** : `[PASS]` sur un test de blocage sans NetworkPolicy
 
 ---
@@ -119,7 +119,8 @@ scripts/test-isolation-gvisor.sh
 kubectl apply -f kubernetes/envs/mvp/infrastructure/gvisor-runtimeclass/manifests/runtimeclass.yaml
 ```
 
-**Résultat attendu** : FAIL sur test 3 ou test 5 selon le scénario  
+**Résultat attendu** : FAIL sur test 3 ou test 5 selon le scénario
+
 **Résultat interdit** : PASS sur test 5 lorsque pod_kernel == host_kernel
 
 ---
@@ -144,7 +145,8 @@ kubectl apply -f kubernetes/envs/mvp/infrastructure/gvisor-runtimeclass/manifest
 # Test 3 [PROOF] peut produire FAIL si RBAC bloque le pod within-quota.
 ```
 
-**Résultat attendu** : FAIL explicite avec mention "RBAC"  
+**Résultat attendu** : FAIL explicite avec mention "RBAC"
+
 **Résultat interdit** : PASS sur test 4 quand c'est RBAC qui bloque
 
 ---
@@ -177,7 +179,8 @@ PROBE_IMAGE=doesnotexist:latest scripts/test-isolation-multitenant.sh
 #   [PASS] sur un test de blocage quand les pods probes ne démarrent pas
 ```
 
-**Résultat attendu** : FAIL sur le contrôle positif + SKIP sur tous les tests de blocage  
+**Résultat attendu** : FAIL sur le contrôle positif + SKIP sur tous les tests de blocage
+
 **Résultat interdit** : PASS sur des tests de blocage dont le pod probe n'a pas démarré
 
 ---
