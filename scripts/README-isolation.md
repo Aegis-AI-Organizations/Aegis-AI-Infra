@@ -14,7 +14,7 @@ Scripts de validation de l'isolation sandbox (War Room). Aucun script ne touche 
 |---|---|
 | `test-isolation-egress.sh` | Internet, API server, kube-system non-DNS bloqués ; DNS:53 autorisé |
 | `test-isolation-gvisor.sh` | RuntimeClass gvisor présente + pod qui tourne réellement sous runsc |
-| `test-isolation-quotas.sh` | [GAP] absence de quotas dans le deployer ; [PROOF] enforcement kubectl |
+| `test-isolation-quotas.sh` | Deployer-created sandbox a un ResourceQuota/LimitRange (SKIP si aucune sandbox réelle) ; [PROOF] enforcement kubectl |
 | `test-isolation-multitenant.sh` | NS_A ↛ NS_B, NS_B ↛ NS_A (ClusterIP et DNS cross-namespace) |
 | `test-teardown.sh` | Teardown normal, idempotence, escape hatch finalizer, dry-run emergency |
 
@@ -192,6 +192,18 @@ PROBE_IMAGE=doesnotexist:latest scripts/test-isolation-multitenant.sh
 | `[PASS]` | Test concluant et positif |
 | `[FAIL]` | Défaillance détectée ou contrôle positif échoué |
 | `[SKIP]` | Test non exécuté — condition préalable absente ou contrôle positif en échec |
-| `[GAP]`  | Fonctionnalité manquante dans le deployer (test-isolation-quotas.sh uniquement) |
+| `[ENV-FAIL]` | Échec dû à l'environnement du cluster de test (ex: handler gVisor non installé sur le node), pas à un bug de code ou de config |
 
 Un SKIP sur un test de blocage après échec du contrôle positif **n'est pas un PASS**. Il faut corriger la cause (image inaccessible, node indisponible, DNS cassé) et relancer.
+
+## Résultats — dernière exécution (orbstack, 2026-10-26)
+
+| Script | Résultat | Détail |
+|---|---|---|
+| `test-isolation-quotas.sh` | PASS (2/2, 2 SKIP) | Enforcement ResourceQuota/LimitRange prouvé ; tests 1-2 SKIP (aucune sandbox réelle sur ce cluster) |
+| `test-isolation-gvisor.sh` | ENV-FAIL (3/4, 1 SKIP) | RuntimeClass + config deployer OK ; `runsc` non installé sur le node orbstack — limite d'environnement local, pas un bug |
+| `test-isolation-egress.sh` | **FAIL (4/6)** | Internet (IP directe et hostname) **non bloqué** malgré `default-deny-egress` ; API server et kube-system:10250 bloqués |
+| `test-isolation-multitenant.sh` | **FAIL (2/6)** | NS_A ↔ NS_B **non isolés** (ClusterIP et DNS) malgré policies par namespace |
+| `test-teardown.sh` | PASS (5/5) | Teardown normal, idempotence, finalizer bloqué + emergency escape hatch, dry-run, résidus — tous validés |
+
+**⚠️ Point ouvert** : l'enforcement Cilium des `NetworkPolicy` default-deny-egress ne bloque pas le trafic pod-à-pod ni Internet sur le cluster `orbstack` au moment de ce run, alors que la PR `test/war-room-isolation` avait été mergée comme validée. À investiguer avant de considérer P1.1 comme clos (cause possible : config Cilium sur ce cluster local, ou régression depuis le merge).
