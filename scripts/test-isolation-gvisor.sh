@@ -142,7 +142,7 @@ fi
 section "Test 2 — SANDBOX_RUNTIME_CLASS set in deployer-worker values.yaml"
 if [[ ! -f "$DEPLOYER_VALUES" ]]; then
   skip "deployer-worker values.yaml not found at $DEPLOYER_VALUES"
-elif grep -qE '^[[:space:]]*name:[[:space:]]*SANDBOX_RUNTIME_CLASS' "$DEPLOYER_VALUES"; then
+elif grep -qE '^[[:space:]]*-?[[:space:]]*name:[[:space:]]*SANDBOX_RUNTIME_CLASS' "$DEPLOYER_VALUES"; then
   value="$(grep -A1 'SANDBOX_RUNTIME_CLASS' "$DEPLOYER_VALUES" | grep 'value:' | awk '{print $2}' | tr -d '"' || echo "")"
   pass "SANDBOX_RUNTIME_CLASS set in deployer-worker values.yaml (value: ${value:-?})"
 else
