@@ -1,36 +1,31 @@
 #!/usr/bin/env bash
 # Aegis AI — Isolation test: ResourceQuota and LimitRange enforcement
 #
-# This script has two purposes:
-#
-#   GAP DOCUMENTATION (tests 1-2):
-#     The deployer currently creates NO ResourceQuota or LimitRange in sandbox
-#     namespaces. These tests document the gap and will FAIL until the deployer
-#     (internal/deployer/kubernetes_resources.go) is updated to apply them.
-#
-#   ENFORCEMENT PROOF (tests 3-4):
-#     Applies test quotas manually and verifies that Kubernetes enforces them
-#     correctly, proving the mechanism works once the deployer is wired up.
-#
 # Tests:
-#   1. [GAP] Deployer-created sandbox has no ResourceQuota     — expected FAIL
-#   2. [GAP] Deployer-created sandbox has no LimitRange        — expected FAIL
+#   1. Deployer-created sandbox has a ResourceQuota   — SKIP if no real sandbox found
+#   2. Deployer-created sandbox has a LimitRange      — SKIP if no real sandbox found
 #   3. [PROOF] ResourceQuota enforced — pod within limits starts
 #   4. [PROOF] LimitRange enforced — pod exceeding CPU max rejected
 #              P6: distinguishes LimitRange rejection from RBAC forbidden
 #
+# Tests 1-2 inspect a namespace created by the real deployer.
+# Set SANDBOX_NS to a specific namespace, or leave unset to auto-discover
+# the most recent aegis-war-room-* namespace labelled managed-by=aegis-worker-deployer.
+# Both tests are SKIP when no such namespace exists on the cluster.
+#
 # Usage: scripts/test-isolation-quotas.sh
 # Env overrides:
-#   PROBE_IMAGE           Container image for test pods  (default: busybox:1.36.0)
-#   AEGIS_ALLOWED_CONTEXT kubectl context guard          (default: unset → warn only)
-#   REPORT_FILE           Path for the log report        (default: /tmp/...)
+#   SANDBOX_NS            Deployer-created namespace to inspect (default: auto-discover)
+#   PROBE_IMAGE           Container image for test pods         (default: busybox:1.36.0)
+#   AEGIS_ALLOWED_CONTEXT kubectl context guard                 (default: unset → warn only)
+#   REPORT_FILE           Path for the log report               (default: /tmp/...)
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 TEST_NS="aegis-war-room-test-quota"
-# A second namespace simulating what the deployer would produce (no quotas applied).
-DEPLOYER_SIM_NS="aegis-war-room-test-quota-deployer"
+# Set SANDBOX_NS to a deployer-created namespace to test, or leave empty for auto-discovery.
+SANDBOX_NS="${SANDBOX_NS:-}"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 REPORT_FILE="${REPORT_FILE:-/tmp/aegis-isolation-quotas-${TIMESTAMP}.log}"
 PROBE_IMAGE="${PROBE_IMAGE:-busybox:1.36.0}"
@@ -77,10 +72,8 @@ check_allowed_context() {
 
 cleanup() {
   section "Cleanup"
-  for ns in "$TEST_NS" "$DEPLOYER_SIM_NS"; do
-    kubectl delete namespace "$ns" --ignore-not-found --wait=false 2>/dev/null || true
-    printf 'Namespace %s deletion requested\n' "$ns"
-  done
+  kubectl delete namespace "$TEST_NS" --ignore-not-found --wait=false 2>/dev/null || true
+  printf 'Namespace %s deletion requested\n' "$TEST_NS"
 }
 
 delete_pod_if_exists() {
@@ -96,40 +89,56 @@ trap 'on_error $LINENO' ERR
 section "Aegis Isolation Test: ResourceQuota and LimitRange"
 printf 'Kubernetes context : %s\n' "$(kubectl config current-context 2>/dev/null || echo unknown)"
 printf 'Test namespace     : %s\n' "$TEST_NS"
-printf 'Simulated deployer : %s\n' "$DEPLOYER_SIM_NS"
 printf 'Report             : %s\n' "$REPORT_FILE"
-printf '\nNOTE: [GAP] tests document missing deployer functionality\n'
-printf '      and are expected to FAIL until the deployer is updated.\n'
-
 trap cleanup EXIT
 
-section "Setup"
-for ns in "$TEST_NS" "$DEPLOYER_SIM_NS"; do
-  kubectl delete namespace "$ns" --ignore-not-found >/dev/null 2>&1 || true
-  for _i in $(seq 1 10); do
-    kubectl get namespace "$ns" >/dev/null 2>&1 || break
-    sleep 2
-  done
-  kubectl create namespace "$ns"
-  printf 'Namespace %s created\n' "$ns"
-done
-
-# ── Test 1: [GAP] No ResourceQuota in deployer-simulated namespace ────────────
-section "Test 1 — [GAP] Deployer-created sandbox has ResourceQuota"
-quota_count="$(kubectl get resourcequota -n "$DEPLOYER_SIM_NS" --no-headers 2>/dev/null | wc -l | tr -d ' ')"
-if [[ "$quota_count" -gt 0 ]]; then
-  pass "ResourceQuota exists in sandbox namespace ($quota_count found)"
+# Auto-discover a deployer-created sandbox if SANDBOX_NS is not set.
+if [[ -z "$SANDBOX_NS" ]]; then
+  SANDBOX_NS="$(kubectl get namespaces \
+    -l 'app.kubernetes.io/managed-by=aegis-worker-deployer' \
+    --no-headers \
+    -o custom-columns=':metadata.name' 2>/dev/null \
+    | grep '^aegis-war-room-' | head -1 | tr -d ' ')" || true
+fi
+if [[ -n "$SANDBOX_NS" ]]; then
+  printf 'Sandbox under test : %s\n' "$SANDBOX_NS"
 else
-  gap "No ResourceQuota in sandbox namespace — deployer (kubernetes_resources.go) must be updated to apply CPU/memory quotas"
+  printf 'Sandbox under test : (none found — tests 1-2 will be SKIP)\n'
 fi
 
-# ── Test 2: [GAP] No LimitRange in deployer-simulated namespace ──────────────
-section "Test 2 — [GAP] Deployer-created sandbox has LimitRange"
-limitrange_count="$(kubectl get limitrange -n "$DEPLOYER_SIM_NS" --no-headers 2>/dev/null | wc -l | tr -d ' ')"
-if [[ "$limitrange_count" -gt 0 ]]; then
-  pass "LimitRange exists in sandbox namespace ($limitrange_count found)"
+section "Setup"
+kubectl delete namespace "$TEST_NS" --ignore-not-found >/dev/null 2>&1 || true
+for _i in $(seq 1 10); do
+  kubectl get namespace "$TEST_NS" >/dev/null 2>&1 || break
+  sleep 2
+done
+kubectl create namespace "$TEST_NS"
+printf 'Namespace %s created\n' "$TEST_NS"
+
+# ── Test 1: Deployer-created sandbox has ResourceQuota ───────────────────────
+section "Test 1 — Deployer-created sandbox has ResourceQuota"
+if [[ -z "$SANDBOX_NS" ]]; then
+  skip "Test 1 — no deployer-created sandbox found (set SANDBOX_NS=aegis-war-room-<scan> to override)"
 else
-  gap "No LimitRange in sandbox namespace — deployer must be updated to set per-container CPU/memory defaults"
+  quota_count="$(kubectl get resourcequota -n "$SANDBOX_NS" --no-headers 2>/dev/null | wc -l | tr -d ' ')"
+  if [[ "$quota_count" -gt 0 ]]; then
+    pass "ResourceQuota exists in $SANDBOX_NS ($quota_count found)"
+  else
+    fail "No ResourceQuota in $SANDBOX_NS — deployer fix not deployed or RBAC missing"
+  fi
+fi
+
+# ── Test 2: Deployer-created sandbox has LimitRange ──────────────────────────
+section "Test 2 — Deployer-created sandbox has LimitRange"
+if [[ -z "$SANDBOX_NS" ]]; then
+  skip "Test 2 — no deployer-created sandbox found"
+else
+  limitrange_count="$(kubectl get limitrange -n "$SANDBOX_NS" --no-headers 2>/dev/null | wc -l | tr -d ' ')"
+  if [[ "$limitrange_count" -gt 0 ]]; then
+    pass "LimitRange exists in $SANDBOX_NS ($limitrange_count found)"
+  else
+    fail "No LimitRange in $SANDBOX_NS — deployer fix not deployed or RBAC missing"
+  fi
 fi
 
 # ── Tests 3-4: ResourceQuota enforcement proof ────────────────────────────────
