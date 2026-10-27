@@ -40,10 +40,23 @@ services:
       - POSTGRES_SEEDS=db
     ports:
       - "7233:7233"
-      - "8233:8233"
     depends_on:
       db:
         condition: service_healthy
+
+  temporal-ui:
+    # temporalio/auto-setup only runs the server; the UI needs its own
+    # container. Port 8233 was documented/exposed above with nothing
+    # actually listening on it.
+    image: temporalio/ui:latest
+    container_name: aegis-temporal-ui
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8233:8080"
+    depends_on:
+      - temporal
 
   # --- Application Services ---
   brain:
@@ -204,7 +217,10 @@ services:
       - proxy
 
   minio:
-    image: minio/minio:latest
+    # minio/minio and minio/mc were pulled from Docker Hub and quay.io by
+    # MinIO Inc. in Sept 2026 (repo archived). pgsty/silo is a drop-in
+    # fork: same API, same data/volumes, still versioned.
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
     container_name: aegis-minio
     ports:
       - "9000:9000"
@@ -222,7 +238,7 @@ services:
       retries: 10
 
   minio-init:
-    image: minio/mc:latest
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
     container_name: aegis-minio-init
     depends_on:
       minio:
