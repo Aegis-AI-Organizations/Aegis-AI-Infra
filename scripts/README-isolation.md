@@ -206,4 +206,18 @@ Un SKIP sur un test de blocage après échec du contrôle positif **n'est pas un
 | `test-isolation-multitenant.sh` | **FAIL (2/6)** | NS_A ↔ NS_B **non isolés** (ClusterIP et DNS) malgré policies par namespace |
 | `test-teardown.sh` | PASS (5/5) | Teardown normal, idempotence, finalizer bloqué + emergency escape hatch, dry-run, résidus — tous validés |
 
-**⚠️ Point ouvert** : l'enforcement Cilium des `NetworkPolicy` default-deny-egress ne bloque pas le trafic pod-à-pod ni Internet sur le cluster `orbstack` au moment de ce run, alors que la PR `test/war-room-isolation` avait été mergée comme validée. À investiguer avant de considérer P1.1 comme clos (cause possible : config Cilium sur ce cluster local, ou régression depuis le merge).
+**Cause identifiée** : `orbstack` ne route pas le trafic des pods à travers Cilium (voir Infra#73) — les `NetworkPolicy` n'y sont pas enforcées pour l'egress/cross-tenant, d'où les FAIL ci-dessus. Ce n'est pas une régression du code ni des manifests.
+
+## Résultats — cluster de référence kind+Cilium (2026-10-27)
+
+`scripts/create-isolation-kind-cluster.sh` monte un cluster kind jetable avec Cilium comme vrai CNI (reproductible depuis le repo, voir le script pour le détail). Mêmes scripts de test relancés dessus :
+
+| Script | Résultat | Détail |
+|---|---|---|
+| `test-isolation-quotas.sh` | PASS (2/2, 2 SKIP) | Identique à orbstack |
+| `test-isolation-gvisor.sh` | FAIL (3/4, 1 SKIP) | RuntimeClass + config deployer OK ; kind ne fournit pas de vrai runtime `runsc` non plus — attendu, gVisor a besoin de vrais nœuds Linux (cloud) |
+| `test-isolation-egress.sh` | **PASS (6/6)** | Internet bloqué, API server bloqué, kube-system:10250 bloqué, DNS autorisé |
+| `test-isolation-multitenant.sh` | **PASS (6/6)** | NS_A ↔ NS_B isolés (ClusterIP et DNS), dans les deux sens |
+| `test-teardown.sh` | PASS (5/5) | Identique à orbstack |
+
+**Conclusion** : les manifests `NetworkPolicy` du deployer fonctionnent correctement — le problème était bien l'absence d'enforcement Cilium sur `orbstack`, pas une régression. Reste ouvert pour clore P1.1/Infra#73 : (1) faire tourner ces tests contre une sandbox créée par le vrai deployer (pas seulement les namespaces synthétiques des scripts), et (2) un vrai nœud Linux avec gVisor pour le dernier point.
