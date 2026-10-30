@@ -46,6 +46,9 @@ DO $$ BEGIN
     ALTER TABLE scans ADD COLUMN IF NOT EXISTS crew_report_markdown TEXT;
 END $$;
 
+ALTER TABLE IF EXISTS vulnerabilities ADD COLUMN IF NOT EXISTS source VARCHAR(32);
+ALTER TABLE IF EXISTS vulnerabilities ADD COLUMN IF NOT EXISTS proof_level VARCHAR(16);
+
 CREATE TABLE IF NOT EXISTS vulnerabilities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     scan_id UUID NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
