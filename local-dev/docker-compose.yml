@@ -84,6 +84,9 @@ services:
       - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}
       - JWT_SECRET=${JWT_SECRET}
       - GRPC_PORT=${GRPC_PORT}
+      - NEO4J_URL=http://aegis-neo4j:7474
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=neo4j_password
       - BRAIN_TLS_ENABLE=true
       - BRAIN_TLS_CA_CERT=/etc/aegis/mtls/ca.pem
       - BRAIN_TLS_SERVER_CERT=/etc/aegis/mtls/brain.pem
