@@ -1,0 +1,27 @@
+global:
+  storageClass: "standard"
+
+auth:
+  existingSecret: "aegis-env"
+  rootUserSecretKey: "MINIO_ROOT_USER"
+  rootPasswordSecretKey: "MINIO_ROOT_PASSWORD"
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+defaultBuckets: "aegis-telemetry:public,aegis-ingest,releases:public"
+
+service:
+  type: ClusterIP
+  ports:
+    api: 9000
+    console: 9001
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "250m"

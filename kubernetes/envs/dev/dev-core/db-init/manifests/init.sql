@@ -1,0 +1,249 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 1. Base Multi-tenant Structure
+CREATE TABLE IF NOT EXISTS companies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    logo_url VARCHAR(255),
+    deployment_token VARCHAR(255) UNIQUE,
+    owner_id UUID, -- Circular reference handled via ALTER TABLE below
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Core Scanning Structure
+CREATE TABLE IF NOT EXISTS scans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    temporal_workflow_id VARCHAR(255) UNIQUE NOT NULL,
+    target_image VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    started_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMPTZ,
+    report_pdf BYTEA
+);
+
+-- Migration: Ensure company_id exists on 'scans' if table was created previously
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='scans' AND column_name='company_id' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE scans ADD COLUMN company_id UUID REFERENCES companies(id) ON DELETE CASCADE;
+    END IF;
+
+    -- Ensure company_id is NOT NULL (Schema Consistency)
+    -- This will fail-fast if there is existing data without a company_id
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='scans' AND column_name='company_id' AND is_nullable = 'YES' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE scans ALTER COLUMN company_id SET NOT NULL;
+    END IF;
+
+    ALTER TABLE scans ADD COLUMN IF NOT EXISTS debug_bundle TEXT;
+    ALTER TABLE scans ADD COLUMN IF NOT EXISTS crew_report_json TEXT;
+    ALTER TABLE scans ADD COLUMN IF NOT EXISTS crew_report_markdown TEXT;
+END $$;
+
+ALTER TABLE IF EXISTS vulnerabilities ADD COLUMN IF NOT EXISTS source VARCHAR(32);
+ALTER TABLE IF EXISTS vulnerabilities ADD COLUMN IF NOT EXISTS proof_level VARCHAR(16);
+
+CREATE TABLE IF NOT EXISTS vulnerabilities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    scan_id UUID NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
+    vuln_type VARCHAR(100) NOT NULL,
+    severity VARCHAR(20) NOT NULL,
+    target_endpoint VARCHAR(255),
+    description TEXT,
+    discovered_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS evidences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vulnerability_id UUID NOT NULL REFERENCES vulnerabilities(id) ON DELETE CASCADE,
+    payload_used TEXT NOT NULL,
+    loot_data JSONB,
+    captured_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Licensing
+CREATE TABLE IF NOT EXISTS licenses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    license_status VARCHAR(50) NOT NULL DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Identity & Access Management
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM (
+            'superadmin', 'admin', 'billing_aegis', 'technicien', 'support', 'commercial',
+            'owner', 'billing_client', 'operateur', 'viewer'
+        );
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_activation_status') THEN
+        CREATE TYPE user_activation_status AS ENUM ('active', 'pending_activation');
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role user_role NOT NULL DEFAULT 'viewer',
+    is_active BOOLEAN DEFAULT true,
+    activation_status user_activation_status NOT NULL DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Migration: Ensure name exists on 'users' if table was created previously
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='users' AND column_name='name' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE users ADD COLUMN name VARCHAR(255);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='users' AND column_name='avatar_url' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE users ADD COLUMN avatar_url TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='users' AND column_name='activation_status' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE users ADD COLUMN activation_status user_activation_status NOT NULL DEFAULT 'active';
+    END IF;
+END $$;
+
+-- Handle circular reference between companies and users
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_companies_owner'
+    ) THEN
+        ALTER TABLE companies ADD CONSTRAINT fk_companies_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL;
+    END IF;
+
+    -- Migration: Ensure deployment_token exists on 'companies'
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='companies' AND column_name='deployment_token' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE companies ADD COLUMN deployment_token VARCHAR(255) UNIQUE;
+    END IF;
+END $$;
+
+UPDATE companies
+SET deployment_token = encode(digest(deployment_token, 'sha256'), 'hex')
+WHERE deployment_token IS NOT NULL
+  AND deployment_token LIKE 'ag_%';
+
+COMMENT ON COLUMN companies.deployment_token IS
+    'SHA-256 hash of the raw ag_ deployment token. The raw token is returned only once during onboarding.';
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. Indexes for Performance and Tenant Isolation
+CREATE INDEX IF NOT EXISTS idx_scans_company_id ON scans (company_id);
+CREATE INDEX IF NOT EXISTS idx_scans_status ON scans (status);
+CREATE INDEX IF NOT EXISTS idx_scans_started_at ON scans (started_at);
+CREATE INDEX IF NOT EXISTS idx_vulnerabilities_scan_id ON vulnerabilities (scan_id);
+CREATE INDEX IF NOT EXISTS idx_evidences_vulnerability_id ON evidences (vulnerability_id);
+CREATE INDEX IF NOT EXISTS idx_users_company_id ON users (company_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+
+ -- 6. Audit Trail
+ CREATE TABLE IF NOT EXISTS audit_logs (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     user_id UUID NOT NULL,
+     company_id UUID,
+     action VARCHAR(100) NOT NULL,
+     target_type VARCHAR(50),
+     target_id VARCHAR(100),
+     details JSONB,
+     ip_address VARCHAR(45),
+     timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+ );
+
+ CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs (user_id);
+ CREATE INDEX IF NOT EXISTS idx_audit_logs_company_id ON audit_logs (company_id);
+ CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs (timestamp);
+
+-- 7. Billing System (Licences & Tokens)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='org_size') THEN
+        ALTER TABLE companies ADD COLUMN org_size VARCHAR(50);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='org_type') THEN
+        ALTER TABLE companies ADD COLUMN org_type VARCHAR(100);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='token_balance') THEN
+        ALTER TABLE companies ADD COLUMN token_balance BIGINT DEFAULT 0 NOT NULL;
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS token_ledger (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    amount BIGINT NOT NULL,
+    reason VARCHAR(255) NOT NULL,
+    scan_id UUID REFERENCES scans(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+-- 8. Agents & Onboarding
+CREATE TABLE IF NOT EXISTS agents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'IDLE',
+    token_hash VARCHAR(255),
+    last_seen TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(company_id, name)
+);
+
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='agents' AND column_name='token_hash' AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE agents ADD COLUMN token_hash VARCHAR(255);
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_agents_company_id ON agents (company_id);
+CREATE INDEX IF NOT EXISTS idx_agents_status ON agents (status);
+
+CREATE TABLE IF NOT EXISTS onboarding_invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_onboarding_invitations_user_id
+    ON onboarding_invitations(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_onboarding_invitations_expires_at
+    ON onboarding_invitations(expires_at);
+
+CREATE INDEX IF NOT EXISTS idx_token_ledger_company_id ON token_ledger(company_id);
+CREATE INDEX IF NOT EXISTS idx_token_ledger_created_at ON token_ledger(created_at);

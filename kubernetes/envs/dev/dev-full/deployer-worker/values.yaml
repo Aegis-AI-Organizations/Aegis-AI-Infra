@@ -1,0 +1,126 @@
+# gVisor is not available on kind nodes (containers, no runsc shim) — see
+# scripts/create-isolation-kind-cluster.sh's own note on this. SANDBOX_RUNTIME_CLASS
+# is left empty so sandboxes created by this worker use the plain runc runtime
+# in dev instead of failing to schedule.
+nameOverride: "deployer-worker-dev"
+
+replicaCount: 0
+terminationGracePeriodSeconds: 60
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-worker-deployer
+  tag: "dev-local"
+  pullPolicy: Never
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+probes:
+  enabled: false
+
+env:
+  - name: TEMPORAL_HOST
+    value: "aegis-temporal-dev-frontend.aegis-dev.svc.cluster.local:7233"
+  - name: TEMPORAL_NAMESPACE
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: TEMPORAL_NAMESPACE
+  - name: DEPLOYER_TASK_QUEUE
+    value: "DEPLOYER_TASK_QUEUE"
+  - name: TEMPORAL_TLS_ENABLE
+    value: "false"
+  - name: MINIO_ENDPOINT
+    value: "aegis-minio-dev:9000"
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_USER
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_PASSWORD
+  - name: MINIO_SECURE
+    value: "false"
+  - name: MINIO_INGEST_BUCKET
+    value: "aegis-ingest"
+  - name: AEGIS_IMAGE_IMPORT_COMMAND
+    value: "docker load -i {archive}"
+  - name: SANDBOX_RUNTIME_CLASS
+    value: ""
+
+volumeMounts:
+  - name: docker-sock
+    mountPath: /var/run/docker.sock
+
+volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+serviceAccount:
+  create: true
+  automountToken: true
+
+rbac:
+  create: true
+  clusterRole: true
+  rules:
+    - apiGroups: [""]
+      resources: ["namespaces"]
+      verbs: ["create", "delete"]
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["create", "get"]
+    - apiGroups: [""]
+      resources: ["services"]
+      verbs: ["create", "get", "list", "watch"]
+    - apiGroups: [""]
+      resources: ["configmaps"]
+      verbs: ["create", "get", "list", "watch"]
+    - apiGroups: ["apps"]
+      resources: ["deployments"]
+      verbs: ["create", "get"]
+    - apiGroups: [""]
+      resources: ["resourcequotas", "limitranges"]
+      verbs: ["create"]
+    - apiGroups: ["networking.k8s.io"]
+      resources: ["networkpolicies"]
+      verbs: ["create"]
+
+sandboxNamespacePolicy:
+  enabled: true
+  prefix: "aegis-dev-war-room-"
+
+networkPolicy:
+  enabled: false
+
+keda:
+  enabled: true
+  minReplicaCount: 0
+  maxReplicaCount: 3
+  pollingInterval: 15
+  cooldownPeriod: 300
+  triggers:
+    - type: temporal
+      metadata:
+        namespace: "default"
+        taskQueue: "DEPLOYER_TASK_QUEUE"
+        useTLS: "false"
+        queueTypes: "workflow,activity"
+        targetQueueSize: "1"
+        activationTargetQueueSize: "0"
+        endpoint: "aegis-temporal-dev-frontend.aegis-dev.svc.cluster.local:7233"

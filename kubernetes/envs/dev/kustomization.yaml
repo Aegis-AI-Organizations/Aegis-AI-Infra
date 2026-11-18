@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Default dev profile. dev-core is the smallest set of Applications that
+# lets a developer run and test api-gateway/brain/dashboard end-to-end.
+# See dev-full/ for the complete stack (Temporal, MinIO, Neo4j, ClickHouse,
+# workers, KEDA). Point root-app-dev.yaml's spec.source.path at
+# kubernetes/envs/dev/dev-full to switch profiles via GitOps; for the plain
+# kubectl flow use `make dev-deploy PROFILE=full`.
+resources:
+  - dev-core

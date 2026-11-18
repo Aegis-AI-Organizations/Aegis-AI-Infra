@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # Deliberately the SAME name as the Application in root-app-mvp.yaml.
+  # The production cutover is an in-place edit of spec.source.path on this
+  # exact object (mvp -> prod), never a second root Application running
+  # alongside the first — two root apps both owning aegis-postgres-mvp,
+  # aegis-cert-manager, etc. would fight over the same child Applications.
+  # See kubernetes/envs/prod/README.md for the exact cutover procedure.
+  name: aegis-prototype-mvp
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+    targetRevision: main
+    path: kubernetes/envs/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

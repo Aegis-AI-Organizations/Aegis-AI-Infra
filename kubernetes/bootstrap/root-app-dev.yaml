@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # Distinct from the prod/mvp root app name on purpose: dev and prod must
+  # never be mistaken for one another in `kubectl get applications -n argocd`.
+  # Optional: only needed if you also installed ArgoCD inside the kind
+  # cluster (`make dev-deploy-argocd`). The default `make dev-deploy` applies
+  # kubernetes/envs/dev/dev-core directly with kubectl, no ArgoCD required.
+  name: aegis-prototype-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Aegis-AI-Organizations/Aegis-AI-Infra.git
+    targetRevision: HEAD
+    path: kubernetes/envs/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,101 @@
+nameOverride: "ingest-worker-dev"
+
+replicaCount: 0
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-worker-ingest
+  tag: "dev-local"
+  pullPolicy: Never
+
+autoscaling:
+  enabled: false
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+probes:
+  enabled: false
+
+env:
+  - name: TEMPORAL_HOST
+    value: "aegis-temporal-dev-frontend.aegis-dev.svc.cluster.local:7233"
+  - name: TEMPORAL_NAMESPACE
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: TEMPORAL_NAMESPACE
+  - name: TEMPORAL_TLS_ENABLE
+    value: "false"
+  - name: REDIS_HOST
+    value: "aegis-redis-dev-master.aegis-dev.svc.cluster.local"
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: REDIS_PASSWORD
+  - name: CLICKHOUSE_HOST
+    value: "aegis-clickhouse-dev.aegis-dev.svc.cluster.local"
+  - name: CLICKHOUSE_PORT
+    value: "8123"
+  - name: CLICKHOUSE_USER
+    value: "aegis_admin"
+  - name: CLICKHOUSE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: CLICKHOUSE_PASSWORD
+  - name: CLICKHOUSE_DB
+    value: "default"
+  - name: MINIO_ENDPOINT
+    value: "aegis-minio-dev:9000"
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_USER
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: MINIO_ROOT_PASSWORD
+  - name: MINIO_BUCKET
+    value: "aegis-ingest"
+  - name: NEO4J_URL
+    value: "http://aegis-neo4j-dev.aegis-dev.svc.cluster.local:7474"
+  - name: NEO4J_USER
+    value: "neo4j"
+  - name: NEO4J_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: NEO4J_PASSWORD
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+networkPolicy:
+  enabled: false
+
+keda:
+  enabled: true
+  minReplicaCount: 0
+  maxReplicaCount: 3
+  pollingInterval: 15
+  cooldownPeriod: 30
+  triggers:
+    - type: temporal
+      metadata:
+        namespace: "default"
+        taskQueue: "INGEST_TASK_QUEUE"
+        useTLS: "false"
+        queueTypes: "workflow,activity"
+        targetQueueSize: "1"
+        activationTargetQueueSize: "0"
+        endpoint: "aegis-temporal-dev-frontend.aegis-dev.svc.cluster.local:7233"

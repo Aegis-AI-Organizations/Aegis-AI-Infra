@@ -1,0 +1,4 @@
+# Correction: cert-manager must run v1.21.3 in production.
+- op: replace
+  path: /spec/source/targetRevision
+  value: "v1.21.3"

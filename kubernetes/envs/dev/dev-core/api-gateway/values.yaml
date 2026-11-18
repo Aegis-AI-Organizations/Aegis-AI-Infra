@@ -1,0 +1,85 @@
+# Dev-core: Temporal/MinIO/Neo4j/mTLS are deliberately absent here. Switch to
+# dev-full if a feature under test needs them.
+nameOverride: "api-gateway-dev"
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-api-gateway
+  # Built locally and loaded into kind by `make dev-build` — never `latest`.
+  tag: "dev-local"
+  pullPolicy: Never
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+  hosts:
+    - host: api.aegis-dev.127.0.0.1.nip.io
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+
+env:
+  - name: DB_HOST
+    value: "aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local:5432"
+  - name: POSTGRES_USER
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_USER
+  - name: POSTGRES_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_PASSWORD
+  - name: POSTGRES_DB
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_DB
+  - name: BRAIN_GRPC_ADDR
+    value: "brain-dev:50051"
+  - name: BRAIN_TLS_ENABLE
+    value: "false"
+  - name: JWT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: JWT_SECRET
+  - name: ALLOWED_ORIGINS
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: ALLOWED_ORIGINS
+  - name: REDIS_ADDR
+    value: "aegis-redis-dev-master.aegis-dev.svc.cluster.local:6379"
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: REDIS_PASSWORD
+
+resources:
+  limits:
+    cpu: 150m
+    memory: 192Mi
+  requests:
+    cpu: 50m
+    memory: 96Mi
+
+initContainers:
+  - name: wait-for-postgres
+    image: alpine:3.20
+    command: ["sh", "-c", "until nc -zv aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
+
+networkPolicy:
+  # kind's default CNI (kindnet) does not enforce NetworkPolicy; enabling it
+  # here would be silently inert. Prod keeps Cilium enforcement.
+  enabled: false

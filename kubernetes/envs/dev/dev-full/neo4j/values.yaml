@@ -1,0 +1,18 @@
+neo4j:
+  name: "aegis-neo4j"
+  password: "neo4j_password"
+  edition: "community"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "300m"
+      memory: "512Mi"
+
+volumes:
+  data:
+    mode: "defaultStorageClass"
+    defaultStorageClass:
+      requests:
+        storage: 1Gi

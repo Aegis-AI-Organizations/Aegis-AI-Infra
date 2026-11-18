@@ -171,6 +171,7 @@ kubectl port-forward svc/<service-name> -n aegis-system <local-port>:<remote-por
 
 ## 📖 Further Reading
 
+- [Dev / Prod Environments — workflow complet](dev-prod-workflow.md)
 - [Getting Started — Run locally](getting-started.md)
 - [Global Architecture](architecture.md)
 - [Cilium Network Policies](cilium-network.md)

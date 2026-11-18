@@ -1,4 +1,42 @@
-.PHONY: setup-dns deploy-local-target delete-local-target build-local-mvp-images e2e-local-loop e2e-local-loop-port-forward verify-demo-readiness verify-mvp-pipeline verify-mvp-redeploy-resilience verify-mvp-fresh-cluster temporal-list-graph-pentest-workflows temporal-cleanup-stale-graph-pentest-workflows validate-local-devops-loop
+.PHONY: setup-dns deploy-local-target delete-local-target build-local-mvp-images e2e-local-loop e2e-local-loop-port-forward verify-demo-readiness verify-mvp-pipeline verify-mvp-redeploy-resilience verify-mvp-fresh-cluster temporal-list-graph-pentest-workflows temporal-cleanup-stale-graph-pentest-workflows validate-local-devops-loop validate dev-create dev-build dev-deploy dev-deploy-argocd dev-status dev-logs dev-destroy render-dev render-prod prod-render
+
+PROFILE ?= dev-core
+
+# --- dev/prod split (see docs/en/kubernetes.md and docs/fr/kubernetes.md) ---
+
+validate:
+	bash scripts/validate-envs.sh
+
+dev-create:
+	bash scripts/dev-create.sh
+
+dev-build:
+	PROFILE=$(PROFILE) bash scripts/dev-build-images.sh
+
+dev-deploy:
+	PROFILE=$(PROFILE) bash scripts/dev-deploy.sh
+
+dev-deploy-argocd:
+	bash scripts/dev-deploy-argocd.sh
+
+dev-status:
+	bash scripts/dev-status.sh
+
+dev-logs:
+	bash scripts/dev-logs.sh
+
+dev-destroy:
+	bash scripts/dev-destroy.sh
+
+render-dev:
+	bash scripts/render-env.sh dev/$(PROFILE)
+
+render-prod:
+	bash scripts/render-env.sh prod
+
+# Kept distinct from render-prod for discoverability under the "prod-*" name
+# operators will reach for.
+prod-render: render-prod
 
 setup-dns:
 	bash scripts/setup-dns.sh

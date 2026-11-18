@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Production overlay for leCube5080.
+#
+# This intentionally reuses kubernetes/envs/mvp as its base instead of
+# duplicating ~25 ArgoCD Application manifests. Every Application name, Helm
+# release name, Secret reference, and PVC name stays byte-identical to mvp so
+# that pointing ArgoCD at this path is a non-destructive, in-place cutover
+# (see kubernetes/envs/prod/README.md). Only the two previously-identified
+# corrections are patched on top.
+resources:
+  - ../mvp
+
+patches:
+  - path: patches/cert-manager-version.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: Application
+      name: aegis-cert-manager
+  - path: patches/postgres-legacy-image.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: Application
+      name: aegis-postgres-mvp

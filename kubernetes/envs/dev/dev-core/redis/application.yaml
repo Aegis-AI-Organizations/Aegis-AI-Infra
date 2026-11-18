@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-redis-dev
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    targetRevision: 19.0.0
+    helm:
+      valuesObject:
+        architecture: standalone
+        auth:
+          existingSecret: "aegis-env"
+          existingSecretPasswordKey: "REDIS_PASSWORD"
+        master:
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "150m"
+          persistence:
+            enabled: true
+            size: 512Mi
+        replica:
+          replicaCount: 0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aegis-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

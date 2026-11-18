@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aegis-db-init-dev
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: aegis_db
+            - name: PGUSER
+              value: aegis_admin
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aegis-env
+                  key: POSTGRES_PASSWORD
+            - name: AEGIS_SEED_USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: aegis-env
+                  key: AEGIS_SEED_USER_EMAIL
+            - name: AEGIS_SEED_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aegis-env
+                  key: AEGIS_SEED_USER_PASSWORD
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              echo "Waiting for PostgreSQL at ${PGHOST}:${PGPORT}..."
+              until psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" -c "SELECT 1" >/dev/null 2>&1; do
+                echo "PostgreSQL is not reachable yet, retrying in 5s..."
+                sleep 5
+              done
+
+              echo "Running database initialization script..."
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 -f /sql/init.sql
+
+              : "${AEGIS_SEED_USER_EMAIL:?AEGIS_SEED_USER_EMAIL is required in secret aegis-env}"
+              : "${AEGIS_SEED_USER_PASSWORD:?AEGIS_SEED_USER_PASSWORD is required in secret aegis-env}"
+
+              echo "Running seed script for initial Aegis user..."
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 \
+                -v AEGIS_SEED_USER_EMAIL="${AEGIS_SEED_USER_EMAIL}" \
+                -v AEGIS_SEED_USER_PASSWORD="${AEGIS_SEED_USER_PASSWORD}" \
+                -f /sql/seed.sql
+
+              echo "Database initialization completed."
+          volumeMounts:
+            - name: db-init-sql
+              mountPath: /sql
+              readOnly: true
+      volumes:
+        - name: db-init-sql
+          configMap:
+            name: aegis-db-init-sql

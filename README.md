@@ -64,7 +64,9 @@ Aegis-AI-Infra/
 │   │   └── aegis-service/            # Universal Helm chart
 │   │
 │   └── envs/
-│       └── mvp/                      # Minimum Viable Product (MVP)
+│       ├── mvp/                      # Currently-live state (kept during migration)
+│       ├── prod/                     # leCube5080 target: overlay of mvp, 2 corrections
+│       └── dev/                      # kind-based local stack: dev-core (default) / dev-full
 │           ├── api-gateway/
 │           ├── brain/
 │           ├── infrastructure/
@@ -182,7 +184,17 @@ make e2e-local-loop
 
 | Environment | Branch | Namespace | Status |
 |---|---|---|---|
-| `mvp` | `main` | `aegis-system` | ✅ Active (Production-Ready) |
+| `mvp` | `main` | `aegis-system` | ✅ Currently live on leCube5080 |
+| `prod` | `main` | `aegis-system` | Overlay of `mvp` with the cert-manager/PostgreSQL corrections — see [cutover procedure](kubernetes/envs/prod/README.md) |
+| `dev` (`dev-core` / `dev-full`) | any | `aegis-dev` | Local `kind` cluster, developer workstations only — see [dev/prod workflow](docs/en/dev-prod-workflow.md) |
+
+See [`docs/en/dev-prod-workflow.md`](docs/en/dev-prod-workflow.md) /
+[`docs/fr/dev-prod-workflow.md`](docs/fr/dev-prod-workflow.md) for the full
+dev/prod split, the Makefile commands (`make dev-create`, `make dev-build`,
+`make dev-deploy`, `make validate`, `make render-dev`, `make render-prod`,
+...), and the non-destructive migration plan from `mvp` to `prod`.
+
+> ⚠️ Never modify, commit, or push this repository from leCube5080.
 
 ---
 

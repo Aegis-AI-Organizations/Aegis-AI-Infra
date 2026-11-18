@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Complete dev stack: everything in dev-core, plus Temporal, MinIO, Neo4j,
+# ClickHouse, KEDA, and the four workers. Still: no Cloudflare, no gVisor
+# RuntimeClass, no cert-manager/mTLS, no production domains.
+resources:
+  - ../dev-core
+  - keda/application.yaml
+  - temporal/application.yaml
+  - minio/application.yaml
+  - neo4j/application.yaml
+  - clickhouse/application.yaml
+  - landing/application.yaml
+  - crewai-worker/application.yaml
+  - pentest-worker/application.yaml
+  - ingest-worker/application.yaml
+  - deployer-worker/application.yaml

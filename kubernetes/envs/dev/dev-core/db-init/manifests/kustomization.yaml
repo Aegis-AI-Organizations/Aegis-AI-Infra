@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: aegis-dev
+
+resources:
+  - job.yaml
+
+# init.sql/seed.sql are copied from kubernetes/envs/mvp/infrastructure/db-init/manifests
+# verbatim. kustomize's load restrictor forbids a configMapGenerator file
+# outside this kustomization's own directory tree, so a live cross-reference
+# isn't possible here the way envs/prod reuses envs/mvp as a kustomize base.
+# If you change the prod schema, copy the same change here.
+configMapGenerator:
+  - name: aegis-db-init-sql
+    files:
+      - init.sql
+      - seed.sql
+
+generatorOptions:
+  disableNameSuffixHash: true

@@ -1,0 +1,129 @@
+# Dev-full Temporal: same persistence wiring as prod, no mTLS (dev never
+# provisions the prod CA or temporal-server-tls/temporal-client-tls secrets —
+# mTLS stays a prod-only concern, see docs/.../kubernetes.md).
+prometheus:
+  enabled: false
+grafana:
+  enabled: false
+cassandra:
+  enabled: false
+mysql:
+  enabled: false
+postgresql:
+  enabled: false
+elasticsearch:
+  enabled: false
+
+server:
+  replicaCount: 1
+  additionalInitContainers:
+    - name: wait-for-postgres
+      image: postgres:16-alpine
+      command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h aegis-postgres-dev-postgresql -p 5432 -U aegis_admin; do
+            echo "Waiting for postgres..."
+            sleep 2
+          done
+  additionalEnv:
+    - name: DB
+      value: "postgres12"
+    - name: POSTGRES_SEEDS
+      value: "aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local"
+    - name: POSTGRES_USER
+      value: "aegis_admin"
+    - name: POSTGRES_PWD
+      valueFrom:
+        secretKeyRef:
+          name: aegis-env
+          key: POSTGRES_PASSWORD
+    - name: DBNAME
+      value: "aegis_persistence"
+    - name: VISIBILITY_DBNAME
+      value: "aegis_visibility"
+    - name: DYNAMIC_CONFIG_FILE_PATH
+      value: "/etc/temporal/dynamic_config/dynamic_config.yaml"
+    - name: BIND_ON_IP
+      value: "0.0.0.0"
+  config:
+    persistence:
+      numHistoryShards: 512
+      defaultStore: default
+      visibilityStore: visibility
+      default:
+        driver: "sql"
+        sql:
+          driver: "postgres12"
+          host: "aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local"
+          port: 5432
+          database: "aegis_persistence"
+          user: "aegis_admin"
+          existingSecret: "aegis-env"
+          secretKey: "POSTGRES_PASSWORD"
+          maxConns: 10
+          maxIdleConns: 10
+          maxConnLifetime: "1h"
+      visibility:
+        driver: "sql"
+        sql:
+          driver: "postgres12"
+          host: "aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local"
+          port: 5432
+          database: "aegis_visibility"
+          user: "aegis_admin"
+          existingSecret: "aegis-env"
+          secretKey: "POSTGRES_PASSWORD"
+          maxConns: 10
+          maxIdleConns: 10
+          maxConnLifetime: "1h"
+  schema:
+    setup:
+      additionalInitContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local -p 5432 -U aegis_admin; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+    update:
+      additionalInitContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local -p 5432 -U aegis_admin; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+
+admintools:
+  additionalEnv:
+    - name: SQL_PLUGIN
+      value: "postgres12"
+    - name: SQL_HOST
+      value: "aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local"
+    - name: SQL_PORT
+      value: "5432"
+    - name: SQL_USER
+      value: "aegis_admin"
+    - name: SQL_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: aegis-env
+          key: POSTGRES_PASSWORD
+    - name: TEMPORAL_CLI_ADDRESS
+      value: "aegis-temporal-dev-frontend.aegis-dev.svc.cluster.local:7233"
+
+schema:
+  setup:
+    enabled: false
+  update:
+    enabled: false

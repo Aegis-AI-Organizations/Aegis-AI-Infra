@@ -1,0 +1,33 @@
+# Same legacy-image correction as prod (see kubernetes/envs/prod/patches),
+# applied directly here since this is a fresh dev-only values file.
+global:
+  security:
+    allowInsecureImages: true
+
+image:
+  registry: docker.io
+  repository: bitnamilegacy/clickhouse
+  tag: 25.3.2-debian-12-r3
+
+shards: 1
+replicaCount: 1
+
+keeper:
+  enabled: false
+
+auth:
+  username: aegis_admin
+  existingSecret: "aegis-env"
+  existingSecretKey: "CLICKHOUSE_PASSWORD"
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "250m"

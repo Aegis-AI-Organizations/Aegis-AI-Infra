@@ -1,0 +1,67 @@
+nameOverride: "brain-dev"
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/aegis-ai-organizations/aegis-ai-brain
+  tag: "dev-local"
+  pullPolicy: Never
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  grpcPort: 50051
+
+env:
+  - name: ALEMBIC_BASELINE_EXISTING_SCHEMA
+    value: "true"
+  - name: DB_HOST
+    value: "aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local:5432"
+  - name: POSTGRES_USER
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_USER
+  - name: POSTGRES_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_PASSWORD
+  - name: POSTGRES_DB
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: POSTGRES_DB
+  - name: JWT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: JWT_SECRET
+  - name: BRAIN_TLS_ENABLE
+    value: "false"
+  - name: REDIS_HOST
+    value: "aegis-redis-dev-master.aegis-dev.svc.cluster.local:6379"
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: aegis-env
+        key: REDIS_PASSWORD
+  - name: ENV
+    value: "dev"
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+initContainers:
+  - name: wait-for-postgres
+    image: alpine:3.20
+    command: ["sh", "-c", "until nc -zv aegis-postgres-dev-postgresql.aegis-dev.svc.cluster.local 5432; do echo 'Waiting for postgres...'; sleep 3; done"]
+
+networkPolicy:
+  enabled: false

@@ -1,0 +1,43 @@
+# Correction: PostgreSQL must use the Bitnami "legacy" image (the public.ecr.aws
+# mirror no longer serves working 16.2.0 images), with allowInsecureImages enabled
+# for that legacy repository, and the single AppArmor exception this image needs.
+# Every other PostgreSQL hardening setting (seccomp, runAsNonRoot,
+# allowPrivilegeEscalation) stays enabled and explicit here so it cannot drift.
+# This AppArmor exception is scoped to this Application only — do not copy it to
+# other workloads.
+- op: remove
+  path: /spec/source/helm/valuesObject/global/imageRegistry
+- op: add
+  path: /spec/source/helm/valuesObject/global/security
+  value:
+    allowInsecureImages: true
+- op: replace
+  path: /spec/source/helm/valuesObject/image/registry
+  value: docker.io
+- op: replace
+  path: /spec/source/helm/valuesObject/image/repository
+  value: bitnamilegacy/postgresql
+- op: replace
+  path: /spec/source/helm/valuesObject/image/tag
+  value: 16.2.0-debian-12-r20
+- op: replace
+  path: /spec/source/helm/valuesObject/primary/image/registry
+  value: docker.io
+- op: replace
+  path: /spec/source/helm/valuesObject/primary/image/repository
+  value: bitnamilegacy/postgresql
+- op: replace
+  path: /spec/source/helm/valuesObject/primary/image/tag
+  value: 16.2.0-debian-12-r20
+- op: add
+  path: /spec/source/helm/valuesObject/primary/podSecurityContext
+  value:
+    seccompProfile:
+      type: RuntimeDefault
+- op: add
+  path: /spec/source/helm/valuesObject/primary/containerSecurityContext
+  value:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    appArmorProfile:
+      type: Unconfined

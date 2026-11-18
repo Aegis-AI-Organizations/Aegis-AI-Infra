@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-postgres-dev
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: postgresql
+    targetRevision: 15.5.15
+    helm:
+      valuesObject:
+        global:
+          security:
+            allowInsecureImages: true
+          postgresql:
+            auth:
+              existingSecret: "aegis-env"
+              secretKeys:
+                adminPasswordKey: "POSTGRES_PASSWORD"
+                userPasswordKey: "POSTGRES_PASSWORD"
+              database: "aegis_db"
+              username: "aegis_admin"
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/postgresql
+          tag: 16.2.0-debian-12-r20
+        primary:
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/postgresql
+            tag: 16.2.0-debian-12-r20
+          podSecurityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containerSecurityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: Unconfined
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "384Mi"
+              cpu: "300m"
+          persistence:
+            enabled: true
+            size: 1Gi
+          initdb:
+            scripts:
+              init-databases.sql: |
+                CREATE DATABASE aegis_persistence;
+                CREATE DATABASE aegis_visibility;
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aegis-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
