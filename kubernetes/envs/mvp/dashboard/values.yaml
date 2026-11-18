@@ -63,8 +63,16 @@ networkPolicy:
   enabled: true
   allowDNS: true
   ingress:
-    - fromEntities:
-        - world
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: aegis-edge-proxy
       ports:
         - port: 80
+          protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: api-gateway-mvp
+      ports:
+        - port: 8080
           protocol: TCP
