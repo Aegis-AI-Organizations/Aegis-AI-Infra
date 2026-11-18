@@ -9,6 +9,13 @@ spec:
       app.kubernetes.io/name: temporal
       app.kubernetes.io/instance: aegis-temporal-mvp
   ingress:
+    # Autoriser toutes les communications internes Temporal :
+    # RPC, Ringpop/membership, UI et outils administratifs.
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: aegis-temporal-mvp
+
     - fromEndpoints:
         - matchLabels:
             app: api-gateway-mvp
@@ -23,6 +30,13 @@ spec:
             - port: "7233"
               protocol: TCP
   egress:
+    # Même autorisation dans le sens sortant. La règle reste strictement
+    # limitée aux pods de cette instance Temporal.
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: temporal
+            app.kubernetes.io/instance: aegis-temporal-mvp
+
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: postgresql
