@@ -159,6 +159,13 @@ Pour maximiser les performances, l'API Gateway met en cache les résultats de v�
 - **Erreur de connexion MinIO** : Si vous testez depuis l'hôte, ajoutez `127.0.0.1 minio` à votre fichier `/etc/hosts`.
 - **Erreur mTLS Gateway/Brain** : Regenerez les certificats avec `./generate-mtls-certs.sh`, puis relancez `docker compose up -d --force-recreate brain gateway`.
 - **Base de donnees vide** : Le Brain applique les migrations Alembic au demarrage. Si besoin, relancez le Brain : `docker compose restart brain`.
+- **`aegis-dashboard` injoignable / se bloque après un moment** : si votre checkout vit dans un dossier synchronisé par un client cloud (Synology Drive, Dropbox, etc.), le watcher de Vite (`usePolling: true`) peut geler l'event loop Node quand ce montage a un hoquet réseau — le conteneur reste "Up" mais ne répond plus du tout, même en interne. Le volume `dashboard` pointe par défaut sur `../../Aegis-AI-Dashboard` (chemins relatifs, pour marcher sur n'importe quelle machine) ; si c'est votre cas, montez plutôt un checkout hors du dossier synchronisé via un `local-dev/docker-compose.override.yml` local (non commité, voir `.gitignore`) :
+  ```yaml
+  services:
+    dashboard:
+      volumes:
+        - /chemin/vers/un/checkout/hors-sync/Aegis-AI-Dashboard:/app
+  ```
 
 ---
 © 2026 Aegis AI. Tous droits réservés.

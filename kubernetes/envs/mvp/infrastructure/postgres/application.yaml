@@ -48,7 +48,9 @@ spec:
                 CREATE DATABASE aegis_persistence;
                 CREATE DATABASE aegis_visibility;
           persistence:
-            enabled: false
+            enabled: true
+            storageClass: "local-path"
+            size: 10Gi
   destination:
     server: https://kubernetes.default.svc
     namespace: aegis-system

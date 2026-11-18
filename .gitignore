@@ -7,6 +7,7 @@ certificates/
 local-dev/cloudflared/credentials.json
 local-dev/cloudflared/cert.pem
 local-dev/certs/
+local-dev/docker-compose.override.yml
 kubernetes/envs/mvp/infrastructure/cloudflared/credentials.json
 graphify-out/
 brag-output-*/

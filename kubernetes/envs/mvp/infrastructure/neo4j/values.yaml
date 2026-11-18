@@ -2,6 +2,13 @@ neo4j:
   name: "aegis-neo4j"
   password: "neo4j_password"
   edition: "community"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "2Gi"
+    limits:
+      cpu: "1000m"
+      memory: "3Gi"
 
 volumes:
   data:
