@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-dashboard
-  tag: "local-bootstrap"
+  tag: "v2.0.307"
   pullPolicy: IfNotPresent
 
 service:

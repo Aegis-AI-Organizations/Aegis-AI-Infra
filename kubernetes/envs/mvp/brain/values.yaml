@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-brain
-  tag: "crewai-primary-local"
+  tag: "v2.0.540"
   pullPolicy: IfNotPresent
 
 service:
