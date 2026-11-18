@@ -1,0 +1,13 @@
+# public.ecr.aws ne fournit plus l’image MinIO épinglée.
+# Utilisation de la version identique depuis le dépôt Bitnami legacy.
+- op: add
+  path: /spec/sources/0/helm/parameters
+  value:
+    - name: global.imageRegistry
+      value: docker.io
+    - name: global.security.allowInsecureImages
+      value: "true"
+    - name: image.repository
+      value: bitnamilegacy/minio
+    - name: image.tag
+      value: 2024.5.10-debian-12-r2

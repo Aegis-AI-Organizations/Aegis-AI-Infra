@@ -25,3 +25,16 @@ patches:
       version: v1alpha1
       kind: Application
       name: aegis-postgres-mvp
+
+  - path: patches/minio-legacy-image.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: Application
+      name: aegis-minio-mvp
+  - path: patches/redis-legacy-image.yaml
+    target:
+      group: argoproj.io
+      version: v1alpha1
+      kind: Application
+      name: aegis-redis-mvp
