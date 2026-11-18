@@ -148,14 +148,14 @@ networkPolicy:
 
 keda:
   enabled: true
-  minReplicaCount: 1
+  minReplicaCount: 0
   maxReplicaCount: 10
   pollingInterval: 15
   cooldownPeriod: 900
   triggers:
     - type: temporal
       metadata:
-        namespace: "default"
+        namespace: "aegis"
         taskQueue: "DEPLOYER_TASK_QUEUE"
         useTLS: "false"
         queueTypes: "workflow,activity"

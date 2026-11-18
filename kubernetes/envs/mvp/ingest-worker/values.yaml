@@ -137,7 +137,7 @@ keda:
   triggers:
     - type: temporal
       metadata:
-        namespace: "default"
+        namespace: "aegis"
         taskQueue: "INGEST_TASK_QUEUE"
         useTLS: "false"
         queueTypes: "workflow,activity"
