@@ -172,11 +172,13 @@ make setup-dns
 # Deploy the deterministic SQLi target with flag aegis-flag-1234.
 make deploy-local-target
 
-# Upload the sandbox topology, trigger a scan, and assert the reported flag.
+# Upload the sandbox topology, trigger a scan, and assert every pipeline step.
 make e2e-local-loop
 ```
 
-`make setup-dns` updates `/etc/hosts` and may request `sudo`. The E2E script reads `AEGIS_SEED_USER_EMAIL` and `AEGIS_SEED_USER_PASSWORD` from `.env` by default, uploads an Aegis-Target topology artifact to MinIO, scans the resulting `minio://` reference, and expects `aegis-flag-1234` in the reported vulnerability evidence. Override `API_BASE_URL`, `SCAN_TARGET_REF`, `ARTIFACT_BUCKET`, `TIMEOUT_SECONDS`, or `POLL_INTERVAL_SECONDS` when testing a non-default local cluster.
+`make setup-dns` updates `/etc/hosts` and may request `sudo`. The E2E script reads `AEGIS_SEED_USER_EMAIL` and `AEGIS_SEED_USER_PASSWORD` from `.env` by default, uploads an Aegis-Target topology artifact to MinIO, scans the resulting `minio://` reference, and then validates **each step** of the pipeline rather than just the final flag: the scan must progress through intermediate phases, save at least one vulnerability, produce a successful CrewAI report (when `REQUIRE_CREW=true`, the default), generate a report, and expose `aegis-flag-1234` in the evidence. The exact definition of a "successful scan" and the reference scenario are documented in [`docs/fr/scan-reussi.md`](docs/fr/scan-reussi.md).
+
+For the reference 5/5 scenario, deploy `Aegis-AI-Brain` with `CREWAI_REQUIRED=true` so a missing or failed CrewAI run fails the scan itself (default is best-effort). Override `REQUIRE_CREW`, `EXPECTED_FLAG`, `API_BASE_URL`, `SCAN_TARGET_REF`, `ARTIFACT_BUCKET`, `TIMEOUT_SECONDS`, or `POLL_INTERVAL_SECONDS` when testing a non-default local cluster.
 
 ---
 

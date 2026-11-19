@@ -7,7 +7,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/aegis-ai-organizations/aegis-ai-api-gateway
-  tag: "v2.0.350"
+  tag: "crewai-fields-local"
   pullPolicy: IfNotPresent
 
 service:
