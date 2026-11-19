@@ -15,6 +15,15 @@ POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-10}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-900}"
 LOGIN_RETRY_SECONDS="${LOGIN_RETRY_SECONDS:-120}"
 CURL_INSECURE="${CURL_INSECURE:-true}"
+# Reference scenario is "5/5": the AI (CrewAI) must have produced a successful
+# result, not just the deterministic worker. Deploy Brain with CREWAI_REQUIRED=true
+# so the scan itself fails without a crew; this flag makes the loop assert it too.
+REQUIRE_CREW="${REQUIRE_CREW:-true}"
+
+# Statuses observed while polling, in order, space-separated (best-effort trail).
+SEEN_STATUSES=""
+# Full JSON body of the final scan-status poll, reused by the step assertions.
+FINAL_SCAN_JSON=""
 
 curl_flags=(-sS)
 if [[ "$CURL_INSECURE" == "true" ]]; then
@@ -198,6 +207,13 @@ wait_for_scan() {
     response="$(api_request -H "Authorization: Bearer $token" "$API_BASE_URL/api/scans/$scan_id")"
     status="$(printf '%s' "$response" | json_field status)"
     echo "Scan $scan_id status: ${status:-unknown}"
+    FINAL_SCAN_JSON="$response"
+
+    # Record each distinct status as we move through the phases so we can assert
+    # the pipeline actually progressed instead of jumping straight to a terminal.
+    if [[ -n "$status" && " $SEEN_STATUSES " != *" $status "* ]]; then
+      SEEN_STATUSES="${SEEN_STATUSES:+$SEEN_STATUSES }$status"
+    fi
 
     case "$status" in
       COMPLETED|completed|SUCCESS|success|DONE|done)
@@ -248,6 +264,81 @@ assert_flag() {
   exit 1
 }
 
+assert_pipeline_progressed() {
+  # A healthy scan walks several phases before COMPLETED. If the only status we
+  # ever observed is the terminal one, the run was too opaque to trust.
+  echo "Observed scan phases: ${SEEN_STATUSES:-none}"
+  local work_phase_seen=false phase
+  for phase in PROVISIONING RECONNAISSANCE SEEDING ATTACKING ANALYZING GENERATING_REPORT CLEANING_UP; do
+    if [[ " $SEEN_STATUSES " == *" $phase "* ]]; then
+      work_phase_seen=true
+      break
+    fi
+  done
+  if [[ "$work_phase_seen" != "true" ]]; then
+    echo "Pipeline never surfaced an intermediate phase (saw: ${SEEN_STATUSES:-none}); refusing to call this a real scan." >&2
+    exit 1
+  fi
+}
+
+assert_vulnerabilities_present() {
+  local token="$1"
+  local scan_id="$2"
+  local vulnerabilities count
+
+  vulnerabilities="$(api_request -H "Authorization: Bearer $token" "$API_BASE_URL/api/scans/$scan_id/vulnerabilities")"
+  count="$(printf '%s' "$vulnerabilities" | python3 -c 'import json,sys
+data=json.load(sys.stdin)
+items=data.get("vulnerabilities", data) if isinstance(data, dict) else data
+print(len(items) if isinstance(items, list) else 0)' 2>/dev/null || echo 0)"
+  if [[ "${count:-0}" -lt 1 ]]; then
+    echo "ANALYZING produced no vulnerability records for scan $scan_id: $vulnerabilities" >&2
+    exit 1
+  fi
+  echo "ANALYZING step proven: $count vulnerability record(s) saved."
+}
+
+assert_crew_proof() {
+  local scan_id="$1"
+  if [[ "$REQUIRE_CREW" != "true" ]]; then
+    echo "REQUIRE_CREW=false: skipping CrewAI proof check."
+    return 0
+  fi
+
+  local crew_status
+  crew_status="$(printf '%s' "$FINAL_SCAN_JSON" | python3 -c 'import json,sys
+scan=json.load(sys.stdin)
+raw=scan.get("crew_report_json") or ""
+try:
+    report=json.loads(raw) if raw else {}
+except Exception:
+    report={}
+print(str(report.get("status", "")).upper())' 2>/dev/null || echo "")"
+
+  if [[ "$crew_status" != "COMPLETED" && "$crew_status" != "SUCCESS" ]]; then
+    echo "CrewAI proof missing for scan $scan_id (crew_report status='${crew_status:-none}'). The AI did not produce a successful result." >&2
+    exit 1
+  fi
+  echo "CrewAI step proven: crew_report status=$crew_status."
+}
+
+assert_report_generated() {
+  local token="$1"
+  local scan_id="$2"
+  local http_code body_file
+
+  body_file="$(mktemp)"
+  http_code="$(api_request -o "$body_file" -w '%{http_code}' \
+    -H "Authorization: Bearer $token" "$API_BASE_URL/api/scans/$scan_id/report" || echo "000")"
+  if [[ "$http_code" != "200" ]] || [[ ! -s "$body_file" ]]; then
+    echo "GENERATING_REPORT step unproven for scan $scan_id (HTTP $http_code, $(wc -c <"$body_file") bytes)." >&2
+    rm -f "$body_file"
+    exit 1
+  fi
+  echo "GENERATING_REPORT step proven: report available ($(wc -c <"$body_file") bytes, HTTP $http_code)."
+  rm -f "$body_file"
+}
+
 main() {
   require_command curl
   require_command python3
@@ -266,8 +357,15 @@ main() {
   echo "Created scan $scan_id."
 
   wait_for_scan "$token" "$scan_id"
+
+  echo "Scan reached COMPLETED; validating each pipeline step..."
+  assert_pipeline_progressed
+  assert_vulnerabilities_present "$token" "$scan_id"
+  assert_crew_proof "$scan_id"
+  assert_report_generated "$token" "$scan_id"
   assert_flag "$token" "$scan_id"
-  echo "Local DevOps loop succeeded: $EXPECTED_FLAG extracted."
+
+  echo "Local DevOps loop succeeded: pipeline steps proven and $EXPECTED_FLAG extracted."
 }
 
 main "$@"
