@@ -6,6 +6,7 @@ resources:
   - infrastructure/cert-manager/issuers-app.yaml
   - infrastructure/gvisor-runtimeclass/application.yaml
   - infrastructure/keda/application.yaml
+  - infrastructure/nvidia-device-plugin/application.yaml
   - api-gateway/application.yaml
   - brain/application.yaml
   - landing/application.yaml

@@ -108,11 +108,11 @@ require_grep 'TEMPORAL_CLI_TLS_CA' scripts/temporal-cleanup-stale-graph-pentest-
 require_grep 'ghcr\.io/aegis-ai-organizations/aegis-ai-api-gateway' kubernetes/envs/mvp/api-gateway/values.yaml
 require_grep 'crewai-fields-local' kubernetes/envs/mvp/api-gateway/values.yaml
 require_grep 'pullPolicy: IfNotPresent' kubernetes/envs/mvp/api-gateway/values.yaml
-require_grep 'crewai-primary-local' kubernetes/envs/mvp/brain/values.yaml
+require_grep 'tag: "(crewai-primary-local|v[0-9]+\.[0-9]+\.[0-9]+)"' kubernetes/envs/mvp/brain/values.yaml
 require_grep 'pullPolicy: IfNotPresent' kubernetes/envs/mvp/brain/values.yaml
 require_grep 'tool-runner-local' kubernetes/envs/mvp/crewai-worker/values.yaml
 require_grep 'pullPolicy: IfNotPresent' kubernetes/envs/mvp/crewai-worker/values.yaml
-require_grep 'tool-runner-local' kubernetes/envs/mvp/pentest-worker/values.yaml
+require_grep 'tag: "(tool-runner-local|v[0-9]+\.[0-9]+\.[0-9]+)"' kubernetes/envs/mvp/pentest-worker/values.yaml
 require_grep 'pullPolicy: IfNotPresent' kubernetes/envs/mvp/pentest-worker/values.yaml
 require_grep 'token_balance' kubernetes/envs/mvp/infrastructure/db-init/manifests/seed.sql
 require_grep 'GREATEST\(companies\.token_balance' kubernetes/envs/mvp/infrastructure/db-init/manifests/seed.sql
