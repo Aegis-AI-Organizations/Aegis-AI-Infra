@@ -106,7 +106,7 @@ require_grep 'TEMPORAL_CLI_TLS_CA' scripts/temporal-list-graph-pentest-workflows
 require_grep 'TEMPORAL_CLI_TLS_CA' scripts/temporal-cleanup-stale-graph-pentest-workflows.sh
 
 require_grep 'ghcr\.io/aegis-ai-organizations/aegis-ai-api-gateway' kubernetes/envs/mvp/api-gateway/values.yaml
-require_grep 'crewai-fields-local' kubernetes/envs/mvp/api-gateway/values.yaml
+require_grep 'tag: "(crewai-fields-local|v[0-9]+\.[0-9]+\.[0-9]+)"' kubernetes/envs/mvp/api-gateway/values.yaml
 require_grep 'pullPolicy: IfNotPresent' kubernetes/envs/mvp/api-gateway/values.yaml
 require_grep 'tag: "(crewai-primary-local|v[0-9]+\.[0-9]+\.[0-9]+)"' kubernetes/envs/mvp/brain/values.yaml
 require_grep 'pullPolicy: IfNotPresent' kubernetes/envs/mvp/brain/values.yaml

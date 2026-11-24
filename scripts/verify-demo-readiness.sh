@@ -5,6 +5,7 @@ NAMESPACE="${NAMESPACE:-aegis-system}"
 ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
 SINCE="${DEMO_LOG_SINCE:-30m}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-1200}"
+ARGOCD_POLL_INTERVAL_SECONDS="${ARGOCD_POLL_INTERVAL_SECONDS:-5}"
 
 critical_apps=(
   aegis-api-gateway-mvp
@@ -23,13 +24,23 @@ require_command() {
 
 assert_argocd_healthy() {
   local app sync health
+  local deadline=$((SECONDS + TIMEOUT_SECONDS))
+
   for app in "${critical_apps[@]}"; do
-    sync="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.sync.status}')"
-    health="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.health.status}')"
-    if [[ "$sync" != "Synced" || "$health" != "Healthy" ]]; then
-      echo "ArgoCD application $app is $sync/$health, expected Synced/Healthy" >&2
-      exit 1
-    fi
+    while true; do
+      sync="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
+      health="$(kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
+      [[ "$sync" == "Synced" && "$health" == "Healthy" ]] && break
+
+      if (( SECONDS >= deadline )); then
+        echo "Timed out waiting for ArgoCD application $app: ${sync:-Unknown}/${health:-Unknown}, expected Synced/Healthy" >&2
+        kubectl -n "$ARGOCD_NAMESPACE" get application "$app" -o wide >&2 || true
+        exit 1
+      fi
+
+      echo "Waiting for ArgoCD application $app: ${sync:-Unknown}/${health:-Unknown}"
+      sleep "$ARGOCD_POLL_INTERVAL_SECONDS"
+    done
   done
   echo "ArgoCD critical applications are Synced/Healthy."
 }
