@@ -109,8 +109,14 @@ repo's Git workflow (see `.github/workflows/linting.yml` for the
 - `kind` (cluster `aegis-dev`, node image pinned in
   `kubernetes/envs/dev/kind-aegis-dev.yaml`)
 - `kubectl` ≥ 1.28, `docker`
-- Optional (`make dev-deploy-argocd`): no extra tooling — the script installs
-  ArgoCD inside the kind cluster itself.
+
+No separate ArgoCD install step is needed: `make dev-deploy` installs ArgoCD
+into the kind cluster itself the first time it runs (the dev-core/dev-full
+manifests are ArgoCD `Application` objects, same as prod, so the
+`Application` CRD and controller must exist before they can be applied).
+`make dev-deploy-argocd` is the GitOps-fidelity variant — it additionally
+applies `root-app-dev.yaml` so ArgoCD syncs from the git remote instead of
+from your local working tree; it requires your branch to be pushed first.
 
 ## 7. dev-core / dev-full / prod differences
 

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# make dev-deploy-argocd — optional: installs ArgoCD inside the kind cluster
-# and applies root-app-dev.yaml, for developers who specifically want to
-# exercise the GitOps path locally. The default `make dev-deploy` does not
-# need this and is faster.
+# make dev-deploy-argocd — optional: installs ArgoCD (if missing, same as
+# make dev-deploy) and applies root-app-dev.yaml so ArgoCD pulls the
+# manifests from the git remote/HEAD instead of from kubectl apply -k's
+# local render. Use this specifically to test the GitOps path end to end
+# (requires your branch to be pushed); `make dev-deploy` is the faster
+# default and works on uncommitted local changes.
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/kube-context-guard.sh

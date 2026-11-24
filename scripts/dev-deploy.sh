@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# make dev-deploy [PROFILE=dev-core|dev-full] — plain kubectl apply -k, no
-# ArgoCD required. Idempotent: re-running just re-applies the same manifests.
+# make dev-deploy [PROFILE=dev-core|dev-full] — installs ArgoCD in the kind
+# cluster if missing (one-time), then `kubectl apply -k` the Application
+# manifests directly (no root-app-dev.yaml needed for this path — that one
+# is for make dev-deploy-argocd, see below). Idempotent: re-running just
+# re-applies the same manifests.
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/kube-context-guard.sh
@@ -22,8 +25,25 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+# The dev-core/dev-full manifests are ArgoCD Application objects (same
+# pattern as prod), so the Application CRD and its controller must exist in
+# this kind cluster before `kubectl apply -k` can create them — otherwise
+# "no matches for kind Application" / "ensure CRDs are installed first".
+if ! kubectl get crd applications.argoproj.io >/dev/null 2>&1; then
+  echo "ArgoCD not found in this cluster, installing it (one-time, ~1-2 min)..."
+  kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --server-side
+  kubectl rollout status deployment/argocd-repo-server -n argocd --timeout=300s
+  kubectl rollout status statefulset/argocd-application-controller -n argocd --timeout=300s
+fi
+
 echo "Applying kubernetes/envs/dev/$PROFILE (profile: $PROFILE)..."
 kubectl apply -k "$ENV_DIR"
+
+echo "Waiting for ArgoCD to sync the applied Applications..."
+for app in $(kubectl get applications -n argocd -o name 2>/dev/null | grep -E '\-dev$'); do
+  kubectl patch "$app" -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}' >/dev/null 2>&1 || true
+done
 
 echo "Waiting for namespace aegis-dev..."
 kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/aegis-dev --timeout=60s

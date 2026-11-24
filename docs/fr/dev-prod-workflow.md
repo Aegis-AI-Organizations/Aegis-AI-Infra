@@ -108,8 +108,15 @@ des commits `[TYPE] Message`).
 - `kind` (cluster `aegis-dev`, image de nœud épinglée dans
   `kubernetes/envs/dev/kind-aegis-dev.yaml`)
 - `kubectl` ≥ 1.28, `docker`
-- Optionnel (`make dev-deploy-argocd`) : aucun outil supplémentaire, le script
-  installe ArgoCD dans le cluster kind lui-même.
+
+Pas d'étape d'installation ArgoCD séparée : `make dev-deploy` installe ArgoCD
+dans le cluster kind dès le premier lancement (les manifestes dev-core/dev-full
+sont des objets `Application` ArgoCD, comme en prod, donc la CRD `Application`
+et son contrôleur doivent exister avant de pouvoir les appliquer).
+`make dev-deploy-argocd` est la variante "fidélité GitOps" — elle applique en
+plus `root-app-dev.yaml` pour qu'ArgoCD synchronise depuis le dépôt Git distant
+plutôt que depuis ton working tree local ; elle nécessite que ta branche soit
+déjà poussée.
 
 ## 7. Différences dev-core / dev-full / prod
 
