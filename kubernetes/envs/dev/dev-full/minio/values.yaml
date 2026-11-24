@@ -1,5 +1,14 @@
 global:
   storageClass: "standard"
+  security:
+    allowInsecureImages: true
+
+# Same legacy-image correction as prod (bitnami/minio no longer publishes
+# this pinned tag; bitnamilegacy does) — see kubernetes/envs/prod/patches/minio-legacy-image.yaml.
+image:
+  registry: docker.io
+  repository: bitnamilegacy/minio
+  tag: 2024.5.10-debian-12-r2
 
 auth:
   existingSecret: "aegis-env"
