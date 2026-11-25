@@ -238,6 +238,12 @@ networkPolicy:
       ports:
         - port: 6379
           protocol: TCP
+    - toServices:
+        - serviceName: aegis-neo4j-mvp
+          namespace: aegis-system
+      ports:
+        - port: 7474
+          protocol: TCP
     - toEntities:
         - world
       ports:
