@@ -24,6 +24,12 @@ spec:
         - matchLabels:
             app: pentest-worker-mvp
         - matchLabels:
+            app: deployer-worker-mvp
+        - matchLabels:
+            app: crewai-worker-mvp
+        - matchLabels:
+            app: ingest-worker-mvp
+        - matchLabels:
             "k8s:io.kubernetes.pod.namespace": keda
       toPorts:
         - ports:
