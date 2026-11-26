@@ -138,7 +138,7 @@ networkPolicy:
         - kube-apiserver
         - host
       ports:
-        - port: 443
+        - port: 6443
           protocol: TCP
     - toServices:
         - serviceName: aegis-minio-mvp
