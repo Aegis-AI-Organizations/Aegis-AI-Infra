@@ -17,8 +17,8 @@ if ! grep -qE '^[[:space:]]*repository:[[:space:]]*"?ghcr\.io/aegis-ai-organizat
   exit 1
 fi
 
-if ! grep -qE '^[[:space:]]*tag:[[:space:]]*"?crewai-fields-local"?[[:space:]]*$' "$API_VALUES"; then
-  echo "api-gateway image tag must use crewai-fields-local for local MVP reproducibility" >&2
+if ! grep -qE '^[[:space:]]*tag:[[:space:]]*"?v[0-9]+\.[0-9]+\.[0-9]+"?[[:space:]]*$' "$API_VALUES"; then
+  echo "api-gateway image tag must be a pinned, published semver tag (e.g. v2.0.350) for predictable deployments" >&2
   exit 1
 fi
 
