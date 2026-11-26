@@ -136,6 +136,7 @@ networkPolicy:
           protocol: TCP
     - toEntities:
         - kube-apiserver
+        - host
       ports:
         - port: 443
           protocol: TCP
