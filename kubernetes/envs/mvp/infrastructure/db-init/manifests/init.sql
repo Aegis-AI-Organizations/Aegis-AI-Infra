@@ -46,9 +46,6 @@ DO $$ BEGIN
     ALTER TABLE scans ADD COLUMN IF NOT EXISTS crew_report_markdown TEXT;
 END $$;
 
-ALTER TABLE IF EXISTS vulnerabilities ADD COLUMN IF NOT EXISTS source VARCHAR(32);
-ALTER TABLE IF EXISTS vulnerabilities ADD COLUMN IF NOT EXISTS proof_level VARCHAR(16);
-
 CREATE TABLE IF NOT EXISTS vulnerabilities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     scan_id UUID NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
@@ -58,6 +55,12 @@ CREATE TABLE IF NOT EXISTS vulnerabilities (
     description TEXT,
     discovered_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Mirrors Brain's Alembic revisions 20261030_0002 and 20261106_0003: Brain only
+-- stamps head (ALEMBIC_BASELINE_EXISTING_SCHEMA=true), so this file owns the schema.
+ALTER TABLE vulnerabilities ADD COLUMN IF NOT EXISTS source VARCHAR(32);
+ALTER TABLE vulnerabilities ADD COLUMN IF NOT EXISTS proof_level VARCHAR(16);
+ALTER TABLE vulnerabilities ADD COLUMN IF NOT EXISTS remediation TEXT;
 
 CREATE TABLE IF NOT EXISTS evidences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
