@@ -206,7 +206,16 @@ wait_for_scan() {
   while (( SECONDS < deadline )); do
     response="$(api_request -H "Authorization: Bearer $token" "$API_BASE_URL/api/scans/$scan_id")"
     status="$(printf '%s' "$response" | json_field status)"
+    if [[ -z "$status" ]]; then
+      # Access tokens expire mid-scan; re-authenticate and retry once.
+      token="$(login)"
+      response="$(api_request -H "Authorization: Bearer $token" "$API_BASE_URL/api/scans/$scan_id")"
+      status="$(printf '%s' "$response" | json_field status)"
+    fi
     echo "Scan $scan_id status: ${status:-unknown}"
+    if [[ -z "$status" ]]; then
+      echo "Unreadable scan response: $response" >&2
+    fi
     FINAL_SCAN_JSON="$response"
 
     # Record each distinct status as we move through the phases so we can assert
@@ -357,6 +366,7 @@ main() {
   echo "Created scan $scan_id."
 
   wait_for_scan "$token" "$scan_id"
+  token="$(login)"
 
   echo "Scan reached COMPLETED; validating each pipeline step..."
   assert_pipeline_progressed
